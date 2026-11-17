@@ -1,0 +1,200 @@
+[
+  {
+    "numero": 0,
+    "nome": "O Louco",
+    "imagem_mini": "/img/arcanos/00-o-louco-mini.webp",
+    "imagem_grande": "/img/arcanos/00-o-louco.webp",
+    "alt": "Bordado do arcano O Louco, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 1,
+    "nome": "O Mago",
+    "imagem_mini": "/img/arcanos/01-o-mago-mini.webp",
+    "imagem_grande": "/img/arcanos/01-o-mago.webp",
+    "alt": "Bordado do arcano O Mago, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 2,
+    "nome": "A Sacerdotisa",
+    "imagem_mini": "/img/arcanos/02-a-sacerdotisa-mini.webp",
+    "imagem_grande": "/img/arcanos/02-a-sacerdotisa.webp",
+    "alt": "Bordado do arcano A Sacerdotisa, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 3,
+    "nome": "A Imperatriz",
+    "imagem_mini": "/img/arcanos/03-a-imperatriz-mini.webp",
+    "imagem_grande": "/img/arcanos/03-a-imperatriz.webp",
+    "alt": "Bordado do arcano A Imperatriz, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 4,
+    "nome": "O Imperador",
+    "imagem_mini": "/img/arcanos/04-o-imperador-mini.webp",
+    "imagem_grande": "/img/arcanos/04-o-imperador.webp",
+    "alt": "Bordado do arcano O Imperador, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 5,
+    "nome": "O Hierofante",
+    "imagem_mini": "/img/arcanos/05-o-hierofante-mini.webp",
+    "imagem_grande": "/img/arcanos/05-o-hierofante.webp",
+    "alt": "Bordado do arcano O Hierofante, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 6,
+    "nome": "Os Enamorados",
+    "imagem_mini": "/img/arcanos/06-os-enamorados-mini.webp",
+    "imagem_grande": "/img/arcanos/06-os-enamorados.webp",
+    "alt": "Bordado do arcano Os Enamorados, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 7,
+    "nome": "O Carro",
+    "imagem_mini": "/img/arcanos/07-o-carro-mini.webp",
+    "imagem_grande": "/img/arcanos/07-o-carro.webp",
+    "alt": "Bordado do arcano O Carro, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 8,
+    "nome": "A Força",
+    "imagem_mini": "/img/arcanos/08-a-forca-mini.webp",
+    "imagem_grande": "/img/arcanos/08-a-forca.webp",
+    "alt": "Bordado do arcano A Força, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 9,
+    "nome": "O Eremita",
+    "imagem_mini": "/img/arcanos/09-o-eremita-mini.webp",
+    "imagem_grande": "/img/arcanos/09-o-eremita.webp",
+    "alt": "Bordado do arcano O Eremita, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 10,
+    "nome": "A Roda da Fortuna",
+    "imagem_mini": "/img/arcanos/10-a-roda-da-fortuna-mini.webp",
+    "imagem_grande": "/img/arcanos/10-a-roda-da-fortuna.webp",
+    "alt": "Bordado do arcano A Roda da Fortuna, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 11,
+    "nome": "A Justiça",
+    "imagem_mini": "/img/arcanos/11-a-justica-mini.webp",
+    "imagem_grande": "/img/arcanos/11-a-justica.webp",
+    "alt": "Bordado do arcano A Justiça, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 12,
+    "nome": "O Enforcado",
+    "imagem_mini": "/img/arcanos/12-o-enforcado-mini.webp",
+    "imagem_grande": "/img/arcanos/12-o-enforcado.webp",
+    "alt": "Bordado do arcano O Enforcado, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 13,
+    "nome": "A Morte",
+    "imagem_mini": "/img/arcanos/13-a-morte-mini.webp",
+    "imagem_grande": "/img/arcanos/13-a-morte.webp",
+    "alt": "Bordado do arcano A Morte, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 14,
+    "nome": "A Temperança",
+    "imagem_mini": "/img/arcanos/14-a-temperanca-mini.webp",
+    "imagem_grande": "/img/arcanos/14-a-temperanca.webp",
+    "alt": "Bordado do arcano A Temperança, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 15,
+    "nome": "O Diabo",
+    "imagem_mini": "/img/arcanos/15-o-diabo-mini.webp",
+    "imagem_grande": "/img/arcanos/15-o-diabo.webp",
+    "alt": "Bordado do arcano O Diabo, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 16,
+    "nome": "A Torre",
+    "imagem_mini": "/img/arcanos/16-a-torre-mini.webp",
+    "imagem_grande": "/img/arcanos/16-a-torre.webp",
+    "alt": "Bordado do arcano A Torre, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 17,
+    "nome": "A Estrela",
+    "imagem_mini": "/img/arcanos/17-a-estrela-mini.webp",
+    "imagem_grande": "/img/arcanos/17-a-estrela.webp",
+    "alt": "Bordado do arcano A Estrela, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 18,
+    "nome": "A Lua",
+    "imagem_mini": "/img/arcanos/18-a-lua-mini.webp",
+    "imagem_grande": "/img/arcanos/18-a-lua.webp",
+    "alt": "Bordado do arcano A Lua, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 19,
+    "nome": "O Sol",
+    "imagem_mini": "/img/arcanos/19-o-sol-mini.webp",
+    "imagem_grande": "/img/arcanos/19-o-sol.webp",
+    "alt": "Bordado do arcano O Sol, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 20,
+    "nome": "O Julgamento",
+    "imagem_mini": "/img/arcanos/20-o-julgamento-mini.webp",
+    "imagem_grande": "/img/arcanos/20-o-julgamento.webp",
+    "alt": "Bordado do arcano O Julgamento, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  },
+  {
+    "numero": 21,
+    "nome": "O Mundo",
+    "imagem_mini": "/img/arcanos/21-o-mundo-mini.webp",
+    "imagem_grande": "/img/arcanos/21-o-mundo.webp",
+    "alt": "Bordado do arcano O Mundo, sem o personagem",
+    "frase": "",
+    "pergunta": ""
+  }
+]

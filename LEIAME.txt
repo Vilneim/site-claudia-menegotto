@@ -1,0 +1,19 @@
+SITE CLÁUDIA MENEGOTTO — ESQUELETO
+
+1) Testar no computador (precisa de servidor local por causa do arcanos.json):
+   cd arte && python3 -m http.server 8000   -> abra http://localhost:8000
+
+2) Preencher:
+   - data/arcanos.json: "frase" e "pergunta" de cada Arcano
+   - img/arcanos/: para cada Arcano, NN-nome.webp (ampliada ~1600 px) e NN-nome-mini.webp (~600 px)
+     (os nomes exatos estão no arcanos.json)
+   - img/aurora-capa.webp, img/arcanos-destaque.webp, img/og.jpg (1200x630), img/favicon.png
+   - Textos entre [colchetes] em artista.html e nas páginas das obras
+   - contato.html: e-mail, WhatsApp e código do Formspree
+   - obras/jornada-de-aurora/index.html: LINK-DE-COMPRA
+
+3) Publicar: Cloudflare Pages, Netlify ou GitHub Pages (suba a pasta "arte").
+   Depois crie o CNAME "arte" no DNS apontando para o endereço da hospedagem.
+
+4) Lenormand Gaúcho: copie a pasta obras/jornada-de-aurora para obras/lenormand-gaucho,
+   ajuste o texto e acrescente o link no menu e na página inicial.
