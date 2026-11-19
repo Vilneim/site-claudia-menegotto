@@ -1,50 +1,356 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A Jornada de Aurora — Cláudia Menegotto</title>
-<meta name="description" content="Livro A Jornada de Aurora, de Cláudia Menegotto.">
-<meta property="og:title" content="A Jornada de Aurora — Cláudia Menegotto">
-<meta property="og:description" content="Livro A Jornada de Aurora, de Cláudia Menegotto.">
-<meta property="og:image" content="https://arte.claudiamenegotto.com.br/img/og.jpg">
-<meta property="og:type" content="website">
-<link rel="icon" href="/img/favicon.png">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Jornada de Aurora — Cláudia Menegotto</title>
+  <meta name="description" content="A Jornada de Aurora, romance de estreia de Cláudia Menegotto. Uma história de descoberta, coragem e transformação.">
+  <link rel="icon" href="/img/favicon.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ── Destaque de sinopse ── */
+    .sinopse-section {
+      padding: 3rem clamp(1.5rem,6vw,6rem) 5rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: clamp(2.5rem,7vw,6rem);
+      align-items: start;
+    }
+
+    .capa-livro {
+      position: sticky;
+      top: 7rem;
+    }
+    .capa-livro-img {
+      aspect-ratio: 2/3;
+      overflow: hidden;
+      background: var(--gold-pale);
+      border-radius: 3px;
+      box-shadow:
+        6px 6px 0 var(--gold-pale),
+        12px 12px 0 rgba(160,120,48,.15);
+    }
+    .capa-livro-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .capa-livro-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: 1.25rem;
+    }
+    .badge {
+      font: .72rem/1 var(--sans);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid var(--gold-pale);
+      padding: .3rem .7rem;
+      border-radius: 100px;
+    }
+
+    /* ── Texto sinopse ── */
+    .sinopse-texto h2 {
+      font-weight: 400;
+      font-size: 1.4rem;
+      color: var(--gold);
+      margin: 2.5rem 0 .75rem;
+    }
+    .sinopse-texto h2:first-of-type { margin-top: 0; }
+    .sinopse-texto p {
+      color: var(--text-soft);
+      line-height: 1.85;
+      margin-bottom: 1rem;
+      max-width: 56ch;
+    }
+
+    /* ── Trecho do livro ── */
+    .trecho-section {
+      background: var(--bg-dark);
+      padding: clamp(3.5rem,8vw,6rem) clamp(1.5rem,6vw,6rem);
+      position: relative;
+      overflow: hidden;
+    }
+    .trecho-section::before {
+      content: '\201C';
+      position: absolute;
+      top: -2rem; left: clamp(1rem,4vw,4rem);
+      font: 18rem/1 var(--serif);
+      color: var(--gold);
+      opacity: .07;
+      pointer-events: none;
+      line-height: .7;
+    }
+    .trecho-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .trecho-label {
+      font: .75rem/1 var(--sans);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 1.5rem;
+    }
+    .trecho-texto {
+      font-style: italic;
+      font-size: clamp(1.1rem,2.5vw,1.4rem);
+      line-height: 1.65;
+      color: rgba(255,255,255,.85);
+      font-weight: 300;
+    }
+    .trecho-fonte {
+      font: .8rem/1 var(--sans);
+      letter-spacing: .15em;
+      color: var(--gold-light);
+      margin-top: 1.5rem;
+      text-transform: uppercase;
+    }
+
+    /* ── Onde encontrar ── */
+    .onde-section {
+      padding: clamp(3rem,7vw,5rem) clamp(1.5rem,6vw,6rem);
+    }
+    .onde-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+    .onde-card {
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      transition: border-color .25s, box-shadow .25s, transform .25s var(--ease-out);
+    }
+    .onde-card:hover {
+      border-color: var(--gold-pale);
+      box-shadow: var(--shadow);
+      transform: translateY(-3px);
+    }
+    .onde-card-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+    .onde-card h4 {
+      font-weight: 500;
+      font-size: 1rem;
+      font-family: var(--sans);
+    }
+    .onde-card p {
+      font: .85rem/1.5 var(--sans);
+      color: var(--text-muted);
+      flex: 1;
+    }
+    .onde-card a {
+      font: .82rem/1 var(--sans);
+      color: var(--gold);
+      letter-spacing: .05em;
+      transition: letter-spacing .2s;
+    }
+    .onde-card:hover a { letter-spacing: .1em; }
+
+    /* ── Outras obras ── */
+    .outras-section {
+      padding: clamp(3rem,6vw,5rem) clamp(1.5rem,6vw,6rem) clamp(4rem,8vw,7rem);
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 860px) {
+      .sinopse-section { grid-template-columns: 1fr; }
+      .capa-livro { position: static; display: flex; gap: 1.5rem; align-items: flex-start; }
+      .capa-livro-img { max-width: 160px; flex-shrink: 0; }
+    }
+    @media (max-width: 480px) {
+      .capa-livro { flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-<header class="topo">
-<a class="marca" href="/">Cláudia Menegotto</a>
-<nav aria-label="Principal">
-<a href="/">Início</a>
-<a href="/artista.html">A Artista</a>
-<a href="/obras/jornada-dos-arcanos/">A Jornada dos Arcanos</a>
-<a href="/obras/jornada-de-aurora/" aria-current="page">A Jornada de Aurora</a>
-<a href="/contato.html">Contato</a>
-</nav>
-</header>
-<main>
-<section class="livro">
-<div class="foto" style="aspect-ratio:2/3"><img src="/img/aurora-capa.webp" alt="Capa do livro A Jornada de Aurora" onerror="this.remove()">Capa do livro</div>
-<div>
-<h1>A Jornada de Aurora</h1>
-<p class="lead">Há histórias que chegam até nós exatamente quando precisamos ouvi-las.</p>
-<p>Aurora vive tranquilamente em uma floresta, até que, certo dia, um pássaro azul aparece em sua janela e a convida a conhecer o mundo.
-Aceitando o convite, ela inicia uma jornada que a levará por diferentes lugares e encontros. Entre praias, praças, igrejas e campos, Aurora conhece pessoas, escuta suas experiências e compartilha histórias.
-Mas há algo especial nessa viagem: é o pássaro azul quem lhe revela qual história cada pessoa precisa ouvir.
-A cada encontro, surgem reflexões sobre a vida, as escolhas, os sentimentos e os caminhos que percorremos.
-A Jornada de Aurora, de Cláudia Menegotto, é uma obra que convida o leitor a descobrir como uma história pode ganhar novos significados dependendo de quem a escuta.</p>
-<p>Autora: Cláudia Menegotto</p>
-Título: A Jornada de Aurora</p>
-Publicação: Edição independente</p>
-Ano: 2026</p>
-Formato: Livro impresso</p>
-Idioma: Português</p>
-<a class="botao" href="https://www.amazon.com.br/Jornada-Aurora-Cl%C3%A1udia-Menegotto-ebook/dp/B0FF2WG23J/ref=sr_1_5?__mk_pt_BR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=3G5QTINK9AEIJ&dib=eyJ2IjoiMSJ9.pc_s1j6KAtzaDlXh3i1nu6TF1b-j21mNUlgzKUVcQw5c8EMJFyWD8EY4nn1edqI4K_ytKd2n4q4oeLVSSuDA6PYO_7XG1EGNYqifakw22awDg2peMG3m9mTQMPgPjVudyzMh4ELC1YxD5tOCh1OwELOILqoQefsr1Hk0xhukSj3s8Lb-0VfeIDjqzgPSpu0xT-XE-T96rA8Vzj4o6kq6LVLH3M7L7rPfdRUIUeH9AkdCmmJUaj54vopOH_DliGvbhVTyU2uYPqjX6HAhbJ49eEGxAwzsERiL2QAX6Ao5eCQ.I6HMRCLj_oyGDGX-7HS_ZInhVFxqEJJkIUWOuiNA_0w&dib_tag=se&keywords=a+jornada+de+aurora&qid=1794937590&sprefix=a+jornada+de+aurora%2Caps%2C240&sr=8-5">Onde encontrar o livro</a>
-</div>
-</section>
-</main>
-<footer class="rodape">© <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura</footer>
-<script src="/js/main.js"></script>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header" id="header">
+    <a class="marca" href="/">
+      Cláudia Menegotto
+      <span class="marca-sub">Arte &amp; Literatura</span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="site-nav" id="site-nav" aria-label="Principal">
+      <a href="/">Início</a>
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/jornada-dos-arcanos/">A Jornada dos Arcanos</a>
+      <a href="/obras/jornada-de-aurora/" aria-current="page">A Jornada de Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ── HERO ── -->
+    <div class="livro-hero">
+      <div class="livro-capa revelar">
+        <img
+          src="/img/aurora-capa.webp"
+          alt="Capa do livro A Jornada de Aurora"
+          loading="lazy"
+          onerror="this.closest('.livro-capa').style.background='var(--gold-pale)'; this.remove()">
+      </div>
+      <div class="livro-info">
+        <p class="eyebrow revelar">Literatura</p>
+        <h1 class="revelar delay-1">A Jornada<br>de Aurora</h1>
+        <p class="lead revelar delay-2">
+          Uma história de descoberta, coragem e transformação
+          que ecoa os grandes arquétipos universais.
+        </p>
+        <div class="revelar delay-3">
+          <a href="#onde-encontrar" class="btn btn-primary">
+            Onde encontrar <span class="btn-icon">↓</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SINOPSE ── -->
+    <div class="sinopse-section">
+
+      <div class="capa-livro revelar-esq">
+        <div class="capa-livro-img">
+          <img
+            src="/img/aurora-capa.webp"
+            alt="Capa do livro A Jornada de Aurora"
+            loading="lazy"
+            onerror="this.closest('.capa-livro-img').style.background='var(--gold-pale)'; this.remove()">
+        </div>
+        <div class="capa-livro-badges">
+          <span class="badge">Romance</span>
+          <span class="badge">Publicado</span>
+          <span class="badge">Ficção</span>
+        </div>
+      </div>
+
+      <div class="sinopse-texto">
+
+        <h2 class="revelar">Sinopse</h2>
+        <p class="revelar delay-1">
+          Aurora é uma jovem que vive entre o peso das expectativas alheias e
+          o chamado silencioso de algo que ela ainda não sabe nomear. Quando
+          sua vida quotidiana se rompe de maneira inesperada, ela é lançada
+          numa jornada que a levará para dentro de si mesma — e para além
+          de tudo que conhecia.
+        </p>
+        <p class="revelar delay-2">
+          No caminho, ela encontra personagens que são ao mesmo tempo humanos
+          e arquetípicos: a sábia anciã, o trickster, o guardião do limiar.
+          Cada encontro é um espelho; cada escolha, uma iniciação.
+        </p>
+        <p class="revelar delay-3">
+          <em>A Jornada de Aurora</em> é uma narrativa de transformação
+          enraizada na mitologia universal e na paisagem afetiva do sul do
+          Brasil — um romance que se lê como história e ressoa como sonho.
+        </p>
+
+        <h2 class="revelar">Sobre o livro</h2>
+        <div class="revelar delay-1" style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem 2rem; font:.9rem/1.7 var(--sans); color:var(--text-soft); margin-bottom:1.5rem">
+          <div><strong style="color:var(--text); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase">Autora</strong><br>Cláudia Menegotto</div>
+          <div><strong style="color:var(--text); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase">Gênero</strong><br>Romance · Ficção literária</div>
+          <div><strong style="color:var(--text); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase">Idioma</strong><br>Português</div>
+          <div><strong style="color:var(--text); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase">Status</strong><br>Publicado</div>
+        </div>
+
+        <div class="revelar delay-2">
+          <a href="#onde-encontrar" class="btn btn-outline">
+            Ver onde comprar <span class="btn-icon">↓</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── TRECHO ── -->
+    <section class="trecho-section" aria-label="Trecho do livro">
+      <div class="trecho-inner revelar">
+        <p class="trecho-label">Trecho</p>
+        <p class="trecho-texto">
+          "Ela não sabia o nome daquele lugar, mas reconheceu a sensação —
+          era o mesmo limiar que havia cruzado em sonhos, dezenas de vezes,
+          sem nunca ousar dar o passo seguinte. Desta vez, deu."
+        </p>
+        <p class="trecho-fonte">— A Jornada de Aurora, Cláudia Menegotto</p>
+      </div>
+    </section>
+
+    <!-- ── ONDE ENCONTRAR ── -->
+    <section class="onde-section" id="onde-encontrar" aria-labelledby="onde-titulo">
+      <p class="section-label revelar">Adquirir o livro</p>
+      <h2 class="section-title revelar delay-1" id="onde-titulo">
+        Onde encontrar
+      </h2>
+
+      <div class="onde-grid">
+        <div class="onde-card revelar delay-1">
+          <div class="onde-card-icon">📦</div>
+          <h4>Amazon</h4>
+          <p>Versão e-book disponíveis para todo o Brasil.</p>
+          <a href="#" target="https://www.amazon.com.br/Jornada-Aurora-Cl%C3%A1udia-Menegotto-ebook/dp/B0FF2WG23J/ref=sr_1_3?__mk_pt_BR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=2HEIQ3GQFZ6YY&dib=eyJ2IjoiMSJ9.pc_s1j6KAtzaDlXh3i1nu-lPf1oOI9Y5hBmwOhVgDXWOEzIG5gyB5fDOj6PnZ2BAbxi8pC32vOd6uqoo8LojDH2TkePtUKnbiOF_IQoqBbO94UVm8yKZ58zO2HP2Y_4LSsIZNlOVzeQnB_mplF1FHsPhpRgab9_mGPmqQenF-xa6N0ZHiZyOqe9hJuPdVGw7dtIKYaE_nKhm61hmEwwUfw9w4bq2rXkOybX2K6r4AYE.MZE-5sO7yaTYk4WbabNjZqIbLuHMXWJtvLUrKu9njFo&dib_tag=se&keywords=a+jornada+de+aurora&qid=1795047746&s=books&sprefix=a+jornada+de+aurora%2Cstripbooks%2C310&sr=1-3" rel="noopener">Comprar na Amazon →</a>
+        </div>
+        <div class="onde-card revelar delay-2">
+          <div class="onde-card-icon">✉️</div>
+          <h4>Diretamente com a autora</h4>
+          <p>Adquira com dedicatória personalizada entrando em contato.</p>
+          <a href="/contato.html">Falar com a autora →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── OUTRAS OBRAS ── -->
+    <section class="outras-section" aria-labelledby="outras-titulo">
+      <p class="section-label revelar">Mais obras</p>
+      <h2 class="section-title revelar delay-1" id="outras-titulo">
+        Veja também
+      </h2>
+      <div class="obras-grid" style="margin-top:2rem">
+        <a class="obra-card revelar delay-2" href="/obras/jornada-dos-arcanos/">
+          <div class="obra-card-img">
+            <img
+              src="/img/arcanos-destaque.webp"
+              alt="Os 22 bordados da Jornada dos Arcanos"
+              loading="lazy"
+              onerror="this.closest('.obra-card-img').style.background='var(--gold-pale)'; this.remove()">
+          </div>
+          <div class="obra-card-body">
+            <p class="obra-card-tag">Bordado · Exposição</p>
+            <h3 class="obra-card-title">A Jornada dos Arcanos</h3>
+            <p class="obra-card-desc">22 Arcanos Maiores interpretados em bordado à mão.</p>
+            <span class="obra-card-link">Visitar a exposição <span>→</span></span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-marca">Cláudia Menegotto</div>
+    <nav class="footer-nav" aria-label="Rodapé">
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/jornada-dos-arcanos/">Arcanos</a>
+      <a href="/obras/jornada-de-aurora/">Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+    <p class="footer-copy">
+      © <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura
+    </p>
+  </footer>
+
+  <script src="/js/main.js"></script>
 </body>
 </html>

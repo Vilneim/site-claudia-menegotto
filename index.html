@@ -1,49 +1,375 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cláudia Menegotto — Arte & Literatura</title>
-<meta name="description" content="Histórias que nascem das palavras, dos fios e da imaginação.">
-<meta property="og:title" content="Cláudia Menegotto — Arte & Literatura">
-<meta property="og:description" content="Histórias que nascem das palavras, dos fios e da imaginação.">
-<meta property="og:image" content="https://arte.claudiamenegotto.com.br/img/og.jpg">
-<meta property="og:type" content="website">
-<link rel="icon" href="/img/favicon.png">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cláudia Menegotto — Arte & Literatura</title>
+  <meta name="description" content="Histórias que nascem das palavras, dos fios e da imaginação. Bordados, literatura e o universo criativo de Cláudia Menegotto.">
+  <meta property="og:title" content="Cláudia Menegotto — Arte & Literatura">
+  <meta property="og:description" content="Histórias que nascem das palavras, dos fios e da imaginação.">
+  <meta property="og:image" content="https://arte.claudiamenegotto.com.br/img/og.jpg">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/img/favicon.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ── Estilos específicos da homepage ── */
+
+    /* Partículas decorativas no hero */
+    .hero-deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .hero-deco-dot {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--gold);
+      opacity: .15;
+    }
+    .hero-deco-dot:nth-child(1) { width: 6px; height: 6px; top: 18%; left: 72%; animation: float1 8s ease-in-out infinite; }
+    .hero-deco-dot:nth-child(2) { width: 4px; height: 4px; top: 62%; left: 85%; animation: float2 11s ease-in-out infinite; }
+    .hero-deco-dot:nth-child(3) { width: 8px; height: 8px; top: 40%; left: 90%; animation: float1 9s ease-in-out infinite .5s; }
+
+    .hero-deco-line {
+      position: absolute;
+      background: var(--gold-pale);
+      opacity: .3;
+    }
+    .hero-deco-line:nth-child(4) { width: 1px; height: 40%; top: 10%; right: 18%; animation: float2 12s ease-in-out infinite; }
+    .hero-deco-line:nth-child(5) { width: 60%; height: 1px; bottom: 25%; right: 0; animation: float1 10s ease-in-out infinite 1s; }
+
+    @keyframes float1 {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    @keyframes float2 {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(8px); }
+    }
+
+    /* Contador ornamental no hero */
+    .hero-counter {
+      position: absolute;
+      bottom: 3rem;
+      right: clamp(1.5rem,6vw,6rem);
+      font: .75rem/1 var(--sans);
+      letter-spacing: .15em;
+      color: var(--text-muted);
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .hero-counter::before {
+      content: '';
+      display: block;
+      width: 1px; height: 3rem;
+      background: var(--gold-pale);
+    }
+
+    /* Seção de obras */
+    .obras-section {
+      padding: clamp(4rem,8vw,7rem) clamp(1.5rem,6vw,6rem);
+    }
+    .obras-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 3.5rem;
+    }
+
+    /* Faixa numérica ornamental */
+    .num-row {
+      display: flex;
+      gap: 3rem;
+      padding: 3.5rem clamp(1.5rem,6vw,6rem);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .num-item { flex-shrink: 0; }
+    .num-valor {
+      font: 300 clamp(2.5rem,6vw,4rem)/1 var(--serif);
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+    .num-valor em {
+      font-style: normal;
+      color: var(--gold);
+      font-size: .6em;
+      vertical-align: super;
+    }
+    .num-label {
+      font: .8rem/1.4 var(--sans);
+      color: var(--text-muted);
+      margin-top: .4rem;
+      letter-spacing: .05em;
+    }
+
+    /* Bio preview */
+    .bio-preview {
+      padding: clamp(4rem,8vw,7rem) clamp(1.5rem,6vw,6rem);
+    }
+
+    /* Frase / manifesto */
+    .manifesto {
+      padding: clamp(4rem,8vw,7rem) clamp(1.5rem,6vw,6rem);
+      background: var(--bg-dark);
+      position: relative;
+      overflow: hidden;
+    }
+    .manifesto::before {
+      content: '\201C';
+      position: absolute;
+      top: -2rem;
+      left: clamp(1rem,4vw,4rem);
+      font: 20rem/1 var(--serif);
+      color: var(--gold);
+      opacity: .06;
+      pointer-events: none;
+      line-height: .7;
+    }
+    .manifesto-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .manifesto blockquote {
+      font-style: italic;
+      font-size: clamp(1.4rem,3.5vw,2.25rem);
+      line-height: 1.4;
+      font-weight: 300;
+      color: var(--white);
+    }
+    .manifesto blockquote cite {
+      display: block;
+      font-style: normal;
+      font: .8rem/1 var(--sans);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-top: 1.75rem;
+    }
+  </style>
 </head>
 <body>
-<header class="topo">
-<a class="marca" href="/">Cláudia Menegotto</a>
-<nav aria-label="Principal">
-<a href="/" aria-current="page">Início</a>
-<a href="/artista.html">A Artista</a>
-<a href="/obras/jornada-dos-arcanos/">A Jornada dos Arcanos</a>
-<a href="/obras/jornada-de-aurora/">A Jornada de Aurora</a>
-<a href="/contato.html">Contato</a>
-</nav>
-</header>
-<main>
-<section class="hero">
-<h1>Cláudia Menegotto</h1>
-<p>Histórias que nascem das palavras, dos fios e da imaginação.</p>
-</section>
-<section class="destaques" aria-label="Obras em destaque">
-<a class="destaque" href="/obras/jornada-dos-arcanos/">
-<div class="foto"><img src="/img/arcanos-destaque.webp" alt="Os 22 bordados da Jornada dos Arcanos reunidos" onerror="this.remove()">Foto dos 22 bordados</div>
-<h2>A Jornada dos Arcanos</h2>
-<p>22 Arcanos Maiores interpretados em bordado.</p>
-<span class="botao">Visitar a exposição</span>
-</a>
-<a class="destaque" href="/obras/jornada-de-aurora/">
-<div class="foto"><img src="/img/aurora-capa.webp" alt="Capa do livro A Jornada de Aurora" onerror="this.remove()">Capa do livro</div>
-<h2>A Jornada de Aurora</h2>
-<p>O livro já publicado.</p>
-<span class="botao">Conhecer o livro</span>
-</a>
-</section>
-</main>
-<footer class="rodape">© <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura</footer>
-<script src="/js/main.js"></script>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header" id="header">
+    <a class="marca" href="/">
+      Cláudia Menegotto
+      <span class="marca-sub">Arte &amp; Literatura</span>
+    </a>
+
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Principal">
+      <a href="/" aria-current="page">Início</a>
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/o-que-os-fios-revelam/">O Que os Fios Revelam</a>
+      <a href="/obras/jornada-de-aurora/">A Jornada de Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ── HERO ── -->
+    <section class="hero" aria-label="Apresentação">
+      <!-- Decorações animadas -->
+      <div class="hero-deco" aria-hidden="true">
+        <div class="hero-deco-dot"></div>
+        <div class="hero-deco-dot"></div>
+        <div class="hero-deco-dot"></div>
+        <div class="hero-deco-line"></div>
+        <div class="hero-deco-line"></div>
+      </div>
+
+      <div class="hero-inner">
+        <p class="hero-eyebrow revelar">Artista visual · Escritora</p>
+
+        <h1 class="revelar delay-1">
+          Histórias que<br>
+          nascem dos<br>
+          <em>fios e palavras</em>
+        </h1>
+
+        <p class="hero-lead revelar delay-2">
+          Arte que se tece entre a literatura e o bordado,
+          explorando arquétipos, símbolos e a jornada interior.
+        </p>
+
+        <div class="hero-actions revelar delay-3">
+          <a href="/obras/o-que-os-fios-revelam/" class="btn btn-primary">
+            Conhecer a coleção <span class="btn-icon" aria-hidden="true">→</span>
+          </a>
+          <a href="/obras/jornada-de-aurora/" class="btn btn-outline">
+            Conhecer o livro
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-line" aria-hidden="true"></div>
+
+      <div class="hero-counter" aria-hidden="true">
+        Arte &amp; Literatura
+      </div>
+
+      <div class="scroll-hint" aria-hidden="true">
+        Rolar
+      </div>
+    </section>
+
+    <!-- ── NÚMEROS ── -->
+    <div class="num-row" aria-label="Em números">
+      <div class="num-item revelar">
+        <div class="num-valor">22<em>+</em></div>
+        <div class="num-label">Bordados de<br>O Que os Fios Revelam</div>
+      </div>
+      <div class="num-item revelar delay-1">
+        <div class="num-valor">1<em>ª</em></div>
+        <div class="num-label">Obra literária concluída<br>A Jornada de Aurora</div>
+      </div>
+      <div class="num-item revelar delay-2">
+        <div class="num-valor">36</div>
+        <div class="num-label">Cartas em desenvolvimento<br>Lenormand Gaúcho</div>
+      </div>
+    </div>
+
+    <!-- ── OBRAS ── -->
+    <section class="obras-section" aria-labelledby="obras-titulo">
+      <div class="obras-header">
+        <div>
+          <p class="section-label revelar">Obras</p>
+          <h2 class="section-title revelar delay-1" id="obras-titulo">
+            Universos<br>criados com cuidado
+          </h2>
+        </div>
+        <a href="/artista.html" class="btn btn-outline revelar delay-2">
+          Conhecer a artista <span class="btn-icon" aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <div class="obras-grid">
+
+        <!-- Card Arcanos -->
+        <a class="obra-card revelar" href="/obras/o-que-os-fios-revelam/">
+          <div class="obra-card-img">
+            <img
+              src="/img/arcanos-destaque.webp"
+              alt="Os 22 bordados de O Que os Fios Revelam reunidos"
+              loading="lazy"
+              onerror="this.closest('.obra-card-img').style.background='var(--gold-pale)'; this.remove()">
+          </div>
+          <div class="obra-card-body">
+            <p class="obra-card-tag">Bordado · Exposição</p>
+            <h3 class="obra-card-title">O Que os Fios Revelam</h3>
+            <p class="obra-card-desc">
+              Coleção de 22 bordados inspirados nos Arcanos Maiores do Tarô. Símbolos, formas
+              e cores no lugar das figuras humanas, ligados por um fio dourado.
+            </p>
+            <span class="obra-card-link">
+              Conhecer a coleção <span aria-hidden="true">→</span>
+            </span>
+          </div>
+        </a>
+
+        <!-- Card Aurora -->
+        <a class="obra-card revelar delay-1" href="/obras/jornada-de-aurora/">
+          <div class="obra-card-img">
+            <img
+              src="/img/aurora-capa.webp"
+              alt="Capa do livro A Jornada de Aurora"
+              loading="lazy"
+              onerror="this.closest('.obra-card-img').style.background='var(--gold-pale)'; this.remove()">
+          </div>
+          <div class="obra-card-body">
+            <p class="obra-card-tag">Literatura</p>
+            <h3 class="obra-card-title">A Jornada de Aurora</h3>
+            <p class="obra-card-desc">
+              Aurora viaja ao lado de um pássaro azul e encontra pessoas e histórias
+              que despertam reflexões sobre a vida, as escolhas e os diferentes caminhos.
+            </p>
+            <span class="obra-card-link">
+              Conhecer o livro <span aria-hidden="true">→</span>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ── FRASE / MANIFESTO ── -->
+    <section class="manifesto" aria-label="Manifesto">
+      <div class="manifesto-inner">
+        <blockquote class="revelar">
+          "Cada bordado é um capítulo; cada linha puxada,
+          uma palavra escolhida. A agulha e a caneta
+          percorrem o mesmo território — o da alma humana."
+          <cite>— Cláudia Menegotto</cite>
+        </blockquote>
+      </div>
+    </section>
+
+    <!-- ── BIO PREVIEW ── -->
+    <section class="bio-preview section" aria-labelledby="bio-titulo">
+      <div class="bio-section">
+
+        <div class="bio-img-wrap revelar-esq">
+          <div class="bio-img">
+            <img
+              src="/img/claudia-retrato.webp"
+              alt="Fotografia de Cláudia Menegotto"
+              loading="lazy"
+              onerror="this.closest('.bio-img').style.background='var(--gold-pale)'; this.remove()">
+          </div>
+        </div>
+
+        <div class="bio-content revelar delay-2">
+          <p class="section-label">A Artista</p>
+          <h2 class="section-title" id="bio-titulo">
+            Entre palavras<br>e fios
+          </h2>
+          <p class="bio-text">
+            Cláudia Menegotto é artista visual, escritora e criadora de projetos autorais
+            que transitam entre a arte têxtil, a literatura e o simbolismo. Licenciada
+            em Artes Visuais, usa o bordado, a escrita e a criação de imagens
+            como meios de investigação e construção de narrativas.
+          </p>
+          <p class="bio-text">
+            É autora de <em>A Jornada de Aurora</em> e criadora da coleção de
+            bordados <em>O Que os Fios Revelam</em>, além do projeto em desenvolvimento
+            do baralho Lenormand Gaúcho.
+          </p>
+          <a href="/artista.html" class="btn btn-outline">
+            Ler mais sobre a artista <span class="btn-icon" aria-hidden="true">→</span>
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-marca">Cláudia Menegotto</div>
+    <nav class="footer-nav" aria-label="Rodapé">
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/o-que-os-fios-revelam/">Arcanos</a>
+      <a href="/obras/jornada-de-aurora/">Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+    <p class="footer-copy">
+      © <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura
+    </p>
+  </footer>
+
+  <script src="/js/main.js"></script>
 </body>
 </html>

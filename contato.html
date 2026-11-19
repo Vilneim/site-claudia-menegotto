@@ -1,45 +1,296 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contato — Cláudia Menegotto</title>
-<meta name="description" content="Fale com Cláudia Menegotto.">
-<meta property="og:title" content="Contato — Cláudia Menegotto">
-<meta property="og:description" content="Fale com Cláudia Menegotto.">
-<meta property="og:image" content="https://arte.claudiamenegotto.com.br/img/og.jpg">
-<meta property="og:type" content="website">
-<link rel="icon" href="/img/favicon.png">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contato — Cláudia Menegotto</title>
+  <meta name="description" content="Entre em contato com Cláudia Menegotto para convites, exposições, publicações e parcerias.">
+  <link rel="icon" href="/img/favicon.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ── Status do formulário ── */
+    .form-status {
+      display: none;
+      padding: 1rem 1.25rem;
+      border-radius: 2px;
+      font: .9rem/1.5 var(--sans);
+      margin-top: 1rem;
+    }
+    .form-status.sucesso {
+      display: block;
+      background: #f0faf0;
+      border: 1px solid #a3d9a3;
+      color: #2d6a2d;
+    }
+    .form-status.erro {
+      display: block;
+      background: #fdf4f4;
+      border: 1px solid #e8b4b4;
+      color: #7a2525;
+    }
+
+    /* ── Mapa / decoração ── */
+    .contato-deco {
+      padding: clamp(3rem,6vw,5rem) clamp(1.5rem,6vw,6rem);
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+      gap: 2rem;
+    }
+    .deco-item {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .deco-item-icon {
+      width: 2.5rem; height: 2.5rem;
+      background: var(--gold-pale);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .deco-item h4 {
+      font: .78rem/1 var(--sans);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-top: .25rem;
+    }
+    .deco-item p {
+      font: .95rem/1.5 var(--sans);
+      color: var(--text);
+    }
+    .deco-item a {
+      color: var(--gold);
+      transition: opacity .2s;
+    }
+    .deco-item a:hover { opacity: .75; }
+  </style>
 </head>
 <body>
-<header class="topo">
-<a class="marca" href="/">Cláudia Menegotto</a>
-<nav aria-label="Principal">
-<a href="/">Início</a>
-<a href="/artista.html">A Artista</a>
-<a href="/obras/jornada-dos-arcanos/">A Jornada dos Arcanos</a>
-<a href="/obras/jornada-de-aurora/">A Jornada de Aurora</a>
-<a href="/contato.html" aria-current="page">Contato</a>
-</nav>
-</header>
-<main>
-<article class="texto">
-<h1>Contato</h1>
-<p>Para convites, exposições, publicações e parcerias.</p>
-<p><a href="mailto:claudiamenegotto@hotmail.com">claudiamenegotto@hotmail.com</a><br>
-<a href="https://wa.me/5548988258814">WhatsApp: +55 48 98825-8814</a></p>
-<!-- Formulário opcional: troque o endereço abaixo pelo gerado no Formspree (formspree.io) -->
-<form action="https://formspree.io/f/SEU-CODIGO" method="post">
-<label>Nome<input name="nome" required></label>
-<label>E-mail<input type="email" name="email" required></label>
-<label>Mensagem<textarea name="mensagem" rows="5" required></textarea></label>
-<p style="font:.85rem var(--sans);color:var(--suave)">Os dados enviados são usados apenas para responder sua mensagem.</p>
-<button class="botao" type="submit">Enviar mensagem</button>
-</form>
-</article>
-</main>
-<footer class="rodape">© <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura</footer>
-<script src="/js/main.js"></script>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header" id="header">
+    <a class="marca" href="/">
+      Cláudia Menegotto
+      <span class="marca-sub">Arte &amp; Literatura</span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="site-nav" id="site-nav" aria-label="Principal">
+      <a href="/">Início</a>
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/o-que-os-fios-revelam/">O Que os Fios Revelam</a>
+      <a href="/obras/jornada-de-aurora/">A Jornada de Aurora</a>
+      <a href="/contato.html" aria-current="page">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ── LAYOUT PRINCIPAL ── -->
+    <div class="contato-layout">
+
+      <!-- Info ── -->
+      <div class="contato-info">
+        <p class="eyebrow revelar">Contato</p>
+        <h1 class="revelar delay-1">Vamos<br>conversar?</h1>
+        <p class="lead revelar delay-2">
+          Para convites de exposições, palestras, publicações,
+          workshops ou qualquer parceria criativa.
+        </p>
+
+        <div class="contato-links revelar delay-3">
+
+          <a class="contato-link"
+             href="mailto:claudiamenegotto@hotmail.com"
+             aria-label="Enviar e-mail para Cláudia Menegotto">
+            <span class="contato-link-icon" aria-hidden="true">✉</span>
+            <span>claudiamenegotto@hotmail.com</span>
+          </a>
+
+          <a class="contato-link"
+             href="https://wa.me/5548988258814"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Enviar mensagem no WhatsApp">
+            <span class="contato-link-icon" aria-hidden="true">💬</span>
+            <span>+55 48 98825-8814</span>
+          </a>
+
+        </div>
+
+        <!-- Áreas de interesse -->
+        <div class="revelar delay-4" style="margin-top:2.5rem">
+          <p style="font:.78rem/1 var(--sans); letter-spacing:.15em; text-transform:uppercase; color:var(--text-muted); margin-bottom:1rem">
+            Áreas de interesse
+          </p>
+          <div class="tags">
+            <span class="tag">Exposições</span>
+            <span class="tag">Publicações</span>
+            <span class="tag">Workshops</span>
+            <span class="tag">Palestras</span>
+            <span class="tag">Parcerias</span>
+            <span class="tag">Imprensa</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulário ── -->
+      <div class="form-wrap revelar delay-2">
+        <h2>Enviar mensagem</h2>
+
+        <!-- Troque /f/SEU-CODIGO pelo código gerado em formspree.io -->
+        <form id="form-contato" action="https://formspree.io/f/SEU-CODIGO" method="POST" novalidate>
+
+          <div class="form-group">
+            <label for="nome">Nome</label>
+            <input
+              type="text"
+              id="nome"
+              name="nome"
+              autocomplete="name"
+              required
+              placeholder="Seu nome completo">
+          </div>
+
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autocomplete="email"
+              required
+              placeholder="seu@email.com">
+          </div>
+
+          <div class="form-group">
+            <label for="assunto">Assunto</label>
+            <input
+              type="text"
+              id="assunto"
+              name="assunto"
+              required
+              placeholder="Ex: Convite para exposição">
+          </div>
+
+          <div class="form-group">
+            <label for="mensagem">Mensagem</label>
+            <textarea
+              id="mensagem"
+              name="mensagem"
+              rows="6"
+              required
+              placeholder="Descreva sua proposta ou dúvida..."></textarea>
+          </div>
+
+          <p class="form-privacidade">
+            Os dados enviados são usados apenas para responder sua mensagem,
+            em conformidade com a LGPD.
+          </p>
+
+          <button class="btn btn-primary" type="submit" id="btn-enviar" style="width:100%; justify-content:center">
+            <span id="btn-texto">Enviar mensagem</span>
+            <span class="btn-icon" aria-hidden="true">→</span>
+          </button>
+
+          <div class="form-status" id="form-status" role="alert" aria-live="polite"></div>
+
+        </form>
+      </div>
+
+    </div>
+
+    <!-- ── INFO EXTRA ── -->
+    <div class="contato-deco">
+      <div class="deco-item revelar">
+        <div class="deco-item-icon" aria-hidden="true">📍</div>
+        <h4>Localização</h4>
+        <p>Rio Grande do Sul, Brasil</p>
+      </div>
+      <div class="deco-item revelar delay-1">
+        <div class="deco-item-icon" aria-hidden="true">⏱</div>
+        <h4>Tempo de resposta</h4>
+        <p>Geralmente em até 48 horas úteis</p>
+      </div>
+      <div class="deco-item revelar delay-2">
+        <div class="deco-item-icon" aria-hidden="true">🌐</div>
+        <h4>Atendimento</h4>
+        <p>Presencial e online</p>
+      </div>
+      <div class="deco-item revelar delay-3">
+        <div class="deco-item-icon" aria-hidden="true">✦</div>
+        <h4>Projetos</h4>
+        <p>
+          <a href="/obras/o-que-os-fios-revelam/">Exposição dos Arcanos</a> ·
+          <a href="/obras/jornada-de-aurora/">Livro Aurora</a>
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-marca">Cláudia Menegotto</div>
+    <nav class="footer-nav" aria-label="Rodapé">
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/o-que-os-fios-revelam/">Arcanos</a>
+      <a href="/obras/jornada-de-aurora/">Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+    <p class="footer-copy">
+      © <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura
+    </p>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // ── Submissão assíncrona do formulário via Formspree ──
+    const form      = document.getElementById('form-contato');
+    const status    = document.getElementById('form-status');
+    const btnTexto  = document.getElementById('btn-texto');
+    const btnEnviar = document.getElementById('btn-enviar');
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Bloqueia duplo envio
+        btnEnviar.disabled = true;
+        btnTexto.textContent = 'Enviando…';
+        status.className = 'form-status';
+        status.textContent = '';
+
+        try {
+          const res = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { Accept: 'application/json' },
+          });
+
+          if (res.ok) {
+            status.className = 'form-status sucesso';
+            status.textContent = 'Mensagem enviada! Responderemos em breve.';
+            form.reset();
+          } else {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Erro desconhecido');
+          }
+        } catch (err) {
+          status.className = 'form-status erro';
+          status.textContent = `Não foi possível enviar. Tente pelo e-mail: claudiamenegotto@hotmail.com`;
+        } finally {
+          btnEnviar.disabled = false;
+          btnTexto.textContent = 'Enviar mensagem';
+          status.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    }
+  </script>
 </body>
 </html>

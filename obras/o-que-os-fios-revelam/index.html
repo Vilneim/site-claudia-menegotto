@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>O Que os Fios Revelam — Uma experiência entre bordados e arcanos — Cláudia Menegotto</title>
+  <meta name="description" content="Quando retiramos o personagem, o que permanece? 22 Arcanos Maiores reinterpretados em bordado por Cláudia Menegotto.">
+  <meta property="og:title" content="O Que os Fios Revelam — Cláudia Menegotto">
+  <meta property="og:description" content="Quando retiramos o personagem, o que permanece? 22 Arcanos Maiores reinterpretados em bordado.">
+  <meta property="og:image" content="https://arte.claudiamenegotto.com.br/img/og.jpg">
+  <link rel="icon" href="/img/favicon.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Foco visível nos botões da galeria (o reset "all: unset" remove o contorno) */
+    .galeria button:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 4px;
+    }
+    .galeria .g-nome {
+      color: var(--text-soft);
+    }
+    .galeria .g-num {
+      display: inline;
+      margin: 0 .35rem 0 0;
+      color: var(--gold);
+      letter-spacing: .08em;
+    }
+    /* Abertura: mostra o bordado inteiro, sem cortar (proporção própria da foto) */
+    .obra-hero-img {
+      aspect-ratio: auto;
+      max-height: none;
+      width: fit-content;
+      max-width: 100%;
+      justify-self: end;
+      background: none;
+    }
+    .obra-hero-img img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 78vh;
+      object-fit: contain;
+    }
+    @media (max-width: 900px) {
+      .obra-hero-img { justify-self: start; }
+    }
+
+    /* Miniaturas: seguem a proporção da foto, sem corte */
+    .galeria .g-foto:not(.sem-foto) {
+      aspect-ratio: auto;
+      display: block;
+      background: none;
+    }
+    .galeria .g-foto img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* Botões da janela ampliada */
+    .lb-nav .btn { padding: .65rem 1.1rem; font-size: .85rem; }
+    .lb-fechar {
+      position: sticky;
+      top: .75rem;
+      float: right;
+      margin: .75rem .75rem 0 0;
+      z-index: 5;
+      width: 2.5rem; height: 2.5rem;
+      border-radius: 50%;
+      border: 1px solid var(--gold-pale);
+      background: var(--bg-card);
+      color: var(--text);
+      font: 1.2rem/1 var(--sans);
+      cursor: pointer;
+    }
+    .lb-fechar:hover { background: var(--gold-pale); }
+    .sem-foto-lb {
+      color: var(--gold-pale);
+      font: 6rem/1 var(--serif);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header" id="header">
+    <a class="marca" href="/">
+      Cláudia Menegotto
+      <span class="marca-sub">Arte &amp; Literatura</span>
+    </a>
+
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Principal">
+      <a href="/">Início</a>
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/o-que-os-fios-revelam/" aria-current="page">O Que os Fios Revelam</a>
+      <a href="/obras/jornada-de-aurora/">A Jornada de Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ── ABERTURA ── -->
+    <section class="obra-hero" aria-labelledby="titulo-obra">
+      <div class="obra-hero-text">
+        <p class="eyebrow revelar">Bordado · Exposição</p>
+        <h1 id="titulo-obra" class="revelar delay-1">O Que os<br>Fios Revelam</h1>
+        <p class="revelar delay-1" style="font-size:clamp(1.1rem,2.2vw,1.35rem); color:var(--gold); margin:-.25rem 0 1.75rem">
+          Uma experiência entre bordados e arcanos
+        </p>
+        <p class="lead revelar delay-2">
+          Quando retiramos o personagem, o que permanece?
+        </p>
+        <p class="revelar delay-2" style="font:.8rem/1.4 var(--sans); letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin:1.75rem 0 1rem">
+          22 Arcanos Maiores reinterpretados em bordado.
+        </p>
+        <p class="revelar delay-3" style="color:var(--text-soft); line-height:1.85; max-width:52ch">
+          Em uma releitura dos 22 Arcanos Maiores do Tarô, Cláudia Menegotto retira as figuras
+          humanas das composições tradicionais e dá protagonismo aos símbolos, às formas e às cores.
+          Um fio dourado atravessa as obras, conectando cada Arcano a uma narrativa maior.
+          Sem personagens que conduzam a interpretação, o observador é convidado a ocupar esse espaço,
+          construindo seus próprios significados diante de cada bordado.
+          Uma coleção de 22 obras. Diferentes olhares. Infinitas interpretações.
+        </p>
+        <div class="revelar delay-3" style="margin-top:2rem">
+          <a href="#galeria" class="btn btn-primary">
+            Entrar na exposição <span class="btn-icon" aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="obra-hero-img revelar delay-2" style="aspect-ratio:auto;max-height:none;width:fit-content;max-width:100%;background:none">
+        <img
+          src="/img/arcanos-destaque.webp"
+          alt="Bordado do Arcano O Louco: uma trouxa pendurada em um cajado, um caminho de fio dourado e o sol, sem figura humana"
+          style="width:auto;height:auto;max-width:100%;max-height:78vh;object-fit:contain;display:block"
+          onerror="this.remove()">
+        <span class="obra-hero-img-label">22 Arcanos Maiores</span>
+      </div>
+    </section>
+
+    <!-- ── GALERIA ── -->
+    <section class="galeria-section" id="galeria" aria-labelledby="galeria-titulo">
+      <h2 class="galeria-titulo revelar" id="galeria-titulo">
+        Os 22 Arcanos — toque em um bordado para vê-lo por inteiro
+      </h2>
+      <div class="galeria" id="galeria-lista"></div>
+    </section>
+
+    <!-- ── CONVITE ── -->
+    <section class="section" style="border-top:1px solid var(--line); padding-top:3rem; padding-bottom:4rem;">
+      <div style="max-width:600px">
+        <p class="section-label revelar">Exposição</p>
+        <h2 class="section-title revelar delay-1">Quer receber<br>a exposição?</h2>
+        <p class="revelar delay-2" style="color:var(--text-soft); margin-bottom:1.75rem; line-height:1.8">
+          A exposição O Que os Fios Revelam pode ser visitada aqui e também presencialmente.
+          Para convites de exposição, palestras ou parcerias, fale com a Cláudia.
+        </p>
+        <div class="revelar delay-3">
+          <a href="/contato.html" class="btn btn-primary">
+            Entrar em contato <span class="btn-icon" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── JANELA AMPLIADA ── -->
+  <dialog id="lb" aria-labelledby="lb-nome">
+    <button class="lb-fechar" id="lb-fechar" aria-label="Fechar">×</button>
+    <div class="lb">
+      <div class="lb-foto" id="lb-foto"></div>
+      <div class="lb-info">
+        <p class="lb-numero" id="lb-numero"></p>
+        <h3 class="lb-nome" id="lb-nome"></h3>
+        <p class="lb-frase" id="lb-frase"></p>
+        <p class="lb-pergunta" id="lb-pergunta"></p>
+        <div class="lb-nav">
+          <button class="btn btn-outline" id="lb-ant" type="button">← Anterior</button>
+          <button class="btn btn-outline" id="lb-prox" type="button">Próximo →</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ── FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-marca">Cláudia Menegotto</div>
+    <nav class="footer-nav" aria-label="Rodapé">
+      <a href="/artista.html">A Artista</a>
+      <a href="/obras/o-que-os-fios-revelam/">Arcanos</a>
+      <a href="/obras/jornada-de-aurora/">Aurora</a>
+      <a href="/contato.html">Contato</a>
+    </nav>
+    <p class="footer-copy">
+      © <span data-ano></span> Cláudia Menegotto · Arte &amp; Literatura
+    </p>
+  </footer>
+
+  <script>
+    /* =====================================================
+       Arcanos Maiores — nomenclatura do Tarô Rider-Waite-Smith
+       Arquivos em /img/arcanos/:  {arquivo}.webp  e  {arquivo}-mini.webp
+       Para trocar um texto, edite "frase" ou "pergunta" abaixo.
+       ===================================================== */
+    const ARCANOS = [
+      { n: 0,  romano: '0',     nome: 'O Louco',          arquivo: '00-o-louco',
+        frase: 'O primeiro passo, dado antes de saber aonde leva.',
+        pergunta: 'O que você deixaria para trás para começar?' },
+      { n: 1,  romano: 'I',     nome: 'O Mago',           arquivo: '01-o-mago',
+        frase: 'Tudo o que é preciso já está sobre a mesa.',
+        pergunta: 'Que talento seu está esperando ser usado?' },
+      { n: 2,  romano: 'II',    nome: 'A Sacerdotisa',     arquivo: '02-a-sacerdotisa',
+        frase: 'O saber que cresce no silêncio.',
+        pergunta: 'O que você já sabe, mas ainda não disse a si mesma?' },
+      { n: 3,  romano: 'III',   nome: 'A Imperatriz',     arquivo: '03-a-imperatriz',
+        frase: 'A criação que floresce quando é cuidada.',
+        pergunta: 'O que em você pede para nascer?' },
+      { n: 4,  romano: 'IV',    nome: 'O Imperador',      arquivo: '04-o-imperador',
+        frase: 'Estrutura, firmeza e a ordem que sustenta.',
+        pergunta: 'Onde falta um limite claro?' },
+      { n: 5,  romano: 'V',     nome: 'O Hierofante',     arquivo: '05-o-hierofante',
+        frase: 'A tradição como ponte entre o humano e o sagrado.',
+        pergunta: 'Que ensinamento você carrega de quem veio antes?' },
+      { n: 6,  romano: 'VI',    nome: 'Os Enamorados',    arquivo: '06-os-enamorados',
+        frase: 'Todo caminho começa em uma escolha.',
+        pergunta: 'O que o seu coração já escolheu?' },
+      { n: 7,  romano: 'VII',   nome: 'O Carro',          arquivo: '07-o-carro',
+        frase: 'Vontade e direção avançando juntas.',
+        pergunta: 'Para onde você está guiando a sua energia?' },
+      { n: 8,  romano: 'VIII',  nome: 'A Força',          arquivo: '08-a-forca',
+        frase: 'A coragem que é gentil e por isso permanece.',
+        pergunta: 'Onde a delicadeza pode mais do que a pressa?' },
+      { n: 9,  romano: 'IX',    nome: 'O Eremita',        arquivo: '09-o-eremita',
+        frase: 'A lanterna acesa no caminho interior.',
+        pergunta: 'Que resposta só aparece quando você silencia?' },
+      { n: 10, romano: 'X',     nome: 'A Roda da Fortuna', arquivo: '10-a-roda-da-fortuna',
+        frase: 'Os ciclos giram, e com eles tudo se renova.',
+        pergunta: 'O que está mudando e pede a sua aceitação?' },
+      { n: 11, romano: 'XI',    nome: 'A Justiça',        arquivo: '11-a-justica',
+        frase: 'O equilíbrio de quem olha os fatos com clareza.',
+        pergunta: 'O que precisa ser pesado com honestidade?' },
+      { n: 12, romano: 'XII',   nome: 'O Enforcado',      arquivo: '12-o-enforcado',
+        frase: 'Ver de cabeça para baixo é ver de outro jeito.',
+        pergunta: 'Que ponto de vista você ainda não experimentou?' },
+      { n: 13, romano: 'XIII',  nome: 'A Morte',          arquivo: '13-a-morte',
+        frase: 'O que termina abre espaço para o que vem.',
+        pergunta: 'O que já cumpriu o seu tempo?' },
+      { n: 14, romano: 'XIV',   nome: 'A Temperança',     arquivo: '14-a-temperanca',
+        frase: 'A paciência de misturar na medida certa.',
+        pergunta: 'Que elementos da sua vida pedem harmonia?' },
+      { n: 15, romano: 'XV',    nome: 'O Diabo',          arquivo: '15-o-diabo',
+        frase: 'As correntes que a gente não vê, mas carrega.',
+        pergunta: 'O que prende você e é possível soltar?' },
+      { n: 16, romano: 'XVI',   nome: 'A Torre',          arquivo: '16-a-torre',
+        frase: 'O que era falso cai para que a verdade apareça.',
+        pergunta: 'Que estrutura já não se sustenta?' },
+      { n: 17, romano: 'XVII',  nome: 'A Estrela',        arquivo: '17-a-estrela',
+        frase: 'A esperança depois da tempestade.',
+        pergunta: 'O que ainda brilha, mesmo de longe?' },
+      { n: 18, romano: 'XVIII', nome: 'A Lua',            arquivo: '18-a-lua',
+        frase: 'O território das sombras, dos sonhos e das dúvidas.',
+        pergunta: 'O que você sente, mas ainda não entende?' },
+      { n: 19, romano: 'XIX',   nome: 'O Sol',            arquivo: '19-o-sol',
+        frase: 'A clareza, a alegria e a vida à luz do dia.',
+        pergunta: 'O que merece ser celebrado agora?' },
+      { n: 20, romano: 'XX',    nome: 'O Julgamento',     arquivo: '20-o-julgamento',
+        frase: 'O chamado que desperta e convida a renascer.',
+        pergunta: 'Que chamado você tem ouvido ultimamente?' },
+      { n: 21, romano: 'XXI',   nome: 'O Mundo',          arquivo: '21-o-mundo',
+        frase: 'A volta completa: o fim que também é começo.',
+        pergunta: 'O que você já concluiu e merece reconhecer?' }
+    ];
+
+    const BASE = '/img/arcanos/';
+    const lista = document.getElementById('galeria-lista');
+    const dlg   = document.getElementById('lb');
+    const lbFoto = document.getElementById('lb-foto');
+    let atual = 0;
+
+    /* ── Monta a galeria ── */
+    ARCANOS.forEach((a, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', `Ver ${a.nome}, Arcano ${a.romano}`);
+
+      const foto = document.createElement('div');
+      foto.className = 'g-foto';
+      foto.style.cssText = 'aspect-ratio:auto;display:block;background:none';
+
+      const img = document.createElement('img');
+      img.src = `${BASE}${a.arquivo}-mini.webp`;
+      img.alt = `Bordado do Arcano ${a.nome}`;
+      img.loading = 'lazy';
+      img.style.cssText = 'width:100%;height:auto;object-fit:contain;display:block';
+      img.addEventListener('error', () => {
+        img.remove();
+        foto.style.cssText = '';
+        foto.classList.add('sem-foto');
+        foto.dataset.n = a.romano;
+      });
+      foto.appendChild(img);
+
+      const legenda = document.createElement('span');
+      legenda.className = 'g-nome';
+      legenda.innerHTML = `<b class="g-num" style="font-weight:400">${a.romano}</b>${a.nome}`;
+
+      btn.append(foto, legenda);
+      btn.addEventListener('click', () => abrir(i));
+      lista.appendChild(btn);
+    });
+
+    /* ── Janela ampliada ── */
+    function preencher(i) {
+      const a = ARCANOS[i];
+      atual = i;
+
+      lbFoto.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = `${BASE}${a.arquivo}.webp`;
+      img.alt = `Bordado do Arcano ${a.nome}, ampliado`;
+      img.addEventListener('error', () => {
+        img.remove();
+        const s = document.createElement('span');
+        s.className = 'sem-foto-lb';
+        s.textContent = a.romano;
+        lbFoto.appendChild(s);
+      });
+      lbFoto.appendChild(img);
+
+      document.getElementById('lb-numero').textContent = `ARCANO ${a.romano}`;
+      document.getElementById('lb-nome').textContent = a.nome;
+      document.getElementById('lb-frase').textContent = a.frase;
+      document.getElementById('lb-pergunta').textContent = a.pergunta;
+    }
+
+    function abrir(i) {
+      preencher(i);
+      if (!dlg.open) dlg.showModal();
+    }
+    function ir(delta) {
+      preencher((atual + delta + ARCANOS.length) % ARCANOS.length);
+    }
+
+    document.getElementById('lb-ant').addEventListener('click', () => ir(-1));
+    document.getElementById('lb-prox').addEventListener('click', () => ir(1));
+    document.getElementById('lb-fechar').addEventListener('click', () => dlg.close());
+
+    // Fecha ao clicar fora da janela
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+    // Setas do teclado
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); ir(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); ir(1); }
+    });
+  </script>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
