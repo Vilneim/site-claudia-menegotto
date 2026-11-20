@@ -4,40 +4,53 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>A Artista — Cláudia Menegotto</title>
-  <meta name="description" content="Conheça Cláudia Menegotto: artista visual, escritora e criadora de projetos autorais entre a arte têxtil, a literatura e o simbolismo.">
+  <meta name="description" content="Conheça Cláudia Menegotto: escritora, bordadeira e artista gaúcha que entrelaça literatura e arte têxtil.">
   <link rel="icon" href="/img/favicon.png">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    /* ── Duas colunas: Quem é + Processo criativo ── */
-    .artista-duas {
+    /* ── Perfil: foto + duas colunas de texto ── */
+    .artista-perfil {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(2rem, 6vw, 5rem);
-      padding: clamp(3rem,6vw,5rem) clamp(1.5rem,6vw,6rem);
+      grid-template-columns: 260px 1fr 1fr;
+      gap: clamp(2rem,4vw,3.5rem);
+      padding: 3rem clamp(1.5rem,6vw,6rem) 4.5rem;
+      align-items: start;
     }
-    .artista-duas h2 { margin-bottom: 1.25rem; }
-    .artista-duas p {
-      color: var(--text-soft);
-      line-height: 1.8;
-      margin-bottom: 1.1rem;
-      max-width: 34em;
+    .artista-perfil .artista-aside { position: static; }
+    .artista-perfil .artista-texto h2 { margin-top: 0; }
+
+    @media (max-width: 1100px) {
+      .artista-perfil { grid-template-columns: 1fr 1fr; }
+      .artista-perfil .artista-aside {
+        grid-column: 1 / -1;
+        max-width: 300px;
+      }
+    }
+    @media (max-width: 700px) {
+      .artista-perfil { grid-template-columns: 1fr; }
     }
 
-    /* ── Linha do tempo vertical ── */
-    .trajetoria {
-      padding: clamp(3rem,6vw,5rem) clamp(1.5rem,6vw,6rem);
+    /* ── Trajetória: linha do tempo vertical ── */
+    .artista-trajetoria {
       border-top: 1px solid var(--line);
+      padding: 3.5rem clamp(1.5rem,6vw,6rem) 5rem;
+    }
+    .artista-trajetoria > h2 {
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--gold);
+      margin-bottom: .5rem;
     }
     .timeline {
       position: relative;
-      padding: 0 0 1rem 2.25rem;
-      margin-top: 2.5rem;
-      max-width: 760px;
+      max-width: 780px;
+      padding: 0 0 .5rem 2.25rem;
+      margin-top: 2rem;
     }
     .timeline::before {
       content: '';
       position: absolute;
-      left: 0; top: .4rem; bottom: 0;
+      left: 0; top: .5rem; bottom: 0;
       width: 1px;
       background: linear-gradient(to bottom, var(--gold), var(--gold-pale), transparent);
     }
@@ -49,7 +62,7 @@
       content: '';
       position: absolute;
       left: -2.25rem;
-      top: .3rem;
+      top: .35rem;
       width: 9px; height: 9px;
       border-radius: 50%;
       background: var(--gold);
@@ -57,71 +70,36 @@
       border: 2px solid var(--bg);
       box-shadow: 0 0 0 1px var(--gold);
     }
-    .timeline-item.em-curso::before {
-      background: var(--bg);
-    }
-    .timeline-status {
-      font: .75rem/1 var(--sans);
+    /* Projeto em desenvolvimento: ponto vazado */
+    .timeline-item.em-andamento::before { background: var(--bg); }
+
+    .timeline-ano {
+      font: .75rem/1.4 var(--sans);
       letter-spacing: .15em;
       color: var(--gold);
       text-transform: uppercase;
-      margin-bottom: .6rem;
+      margin-bottom: .5rem;
     }
-    .timeline-item h3 {
-      font-weight: 400;
-      font-size: clamp(1.3rem, 2.5vw, 1.6rem);
-      line-height: 1.25;
+    .timeline-titulo {
+      font: 400 clamp(1.3rem,2.6vw,1.65rem)/1.25 var(--serif);
+      color: var(--text);
       margin-bottom: .75rem;
     }
-    .timeline-item p {
+    .timeline-desc p {
       color: var(--text-soft);
       line-height: 1.8;
-      margin-bottom: .85rem;
-      max-width: 38em;
+      font-size: 1rem;
+      margin-bottom: .75rem;
     }
-
-    /* ── Topo: hero à esquerda, ficha à direita ── */
-    .artista-topo {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 540px);
-      gap: clamp(2rem, 6vw, 5rem);
-      align-items: start;
-      padding-right: clamp(1.5rem,6vw,6rem);
+    .timeline-link {
+      display: inline-block;
+      margin-top: .25rem;
+      font: .85rem/1 var(--sans);
+      letter-spacing: .06em;
+      color: var(--gold);
+      transition: opacity .2s;
     }
-    .ficha {
-      padding-top: clamp(6rem, 12vw, 9rem);
-      display: grid;
-      grid-template-columns: minmax(150px, 210px) 1fr;
-      gap: 1.75rem;
-      align-items: start;
-    }
-    .ficha-foto {
-      aspect-ratio: 4 / 5;
-      background: var(--gold-pale);
-      overflow: hidden;
-    }
-    .ficha-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .ficha-info { display: grid; gap: 1.1rem; align-content: start; }
-    .ficha-info strong {
-      display: block;
-      font: .75rem/1 var(--sans);
-      letter-spacing: .15em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: .4rem;
-      font-weight: 400;
-    }
-    .ficha-info a { color: var(--gold); }
-
-    @media (max-width: 760px) {
-      .artista-duas { grid-template-columns: 1fr; }
-      .artista-topo { grid-template-columns: 1fr; padding-right: 0; }
-      .ficha { order: 2; padding: 0 clamp(1.5rem,6vw,6rem) 2rem; }
-    }
-    @media (max-width: 480px) {
-      .ficha { grid-template-columns: 1fr; }
-      .ficha-foto { max-width: 240px; }
-    }
+    .timeline-link:hover { opacity: .7; }
   </style>
 </head>
 <body>
@@ -148,143 +126,153 @@
 
   <main>
 
-    <!-- ── TOPO: HERO + FICHA (direita) ── -->
-    <div class="artista-topo">
+    <!-- ── PAGE HERO ── -->
     <div class="page-hero revelar">
       <p class="eyebrow">A Artista</p>
       <h1>Cláudia<br>Menegotto</h1>
       <p class="lead">
-        Artista visual e escritora, transita entre a arte têxtil,
-        a literatura e o simbolismo.
+        Escritora e bordadeira gaúcha que entrelaça a linguagem
+        das palavras com a linguagem dos fios.
       </p>
     </div>
 
-    <aside class="ficha" aria-label="Informações">
-      <div class="ficha-foto revelar">
-        <img
-          src="/img/claudia-retrato.webp"
-          alt="Fotografia de Cláudia Menegotto"
-          loading="lazy"
-          onerror="this.remove()">
-      </div>
-      <div class="ficha-info revelar delay-1">
-        <div>
-          <strong>Formação</strong>
-          Licenciatura em Artes Visuais
+    <!-- ── PERFIL: foto + Quem é + Processo criativo ── -->
+    <div class="artista-perfil">
+
+      <!-- Foto e informações -->
+      <aside class="artista-aside revelar">
+        <div class="artista-foto">
+          <img
+            src="/img/claudia-retrato.webp"
+            alt="Fotografia de Cláudia Menegotto"
+            loading="lazy"
+            onerror="this.closest('.artista-foto').style.background='var(--gold-pale)'; this.remove()">
         </div>
-        <div>
+
+        <div class="artista-info">
           <strong>Localização</strong>
           Rio Grande do Sul, Brasil
         </div>
-        <div>
-          <strong>Linguagens</strong>
-          Bordado · Escrita · Criação de imagens
+        <div class="artista-info">
+          <strong>Formação</strong>
+          Licenciatura em Artes Visuais
         </div>
-        <div>
-          <strong>Obra publicada</strong>
-          A Jornada de Aurora
+        <div class="artista-info">
+          <strong>Disciplinas</strong>
+          Escrita · Bordado · Arte Têxtil
         </div>
-        <div>
+        <div class="artista-info">
+          <strong>Contato</strong>
+          <a href="/contato.html" style="color:var(--gold)">Enviar mensagem →</a>
+        </div>
+        <div class="artista-info">
           <strong>E-mail</strong>
-          <a href="mailto:claudiamenegotto@hotmail.com" style="word-break:break-all">claudiamenegotto@hotmail.com</a>
+          <a href="mailto:claudiamenegotto@hotmail.com"
+             style="color:var(--gold); font-size:.85rem; word-break:break-all">
+            claudiamenegotto@hotmail.com
+          </a>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      <!-- Quem é -->
+      <article class="artista-texto">
+        <h2 class="revelar">Quem é</h2>
+        <p class="revelar delay-1">
+          Cláudia Menegotto é artista visual, escritora e criadora de projetos autorais
+          que transitam entre a arte têxtil, a literatura e o simbolismo.
+        </p>
+        <p class="revelar delay-1">
+          Licenciada em Artes Visuais, desenvolve trabalhos que exploram diferentes formas
+          de expressão, utilizando o bordado, a escrita e a criação de imagens como meios
+          de investigação e construção de narrativas.
+        </p>
+        <p class="revelar delay-2">
+          Sua produção reúne elementos do cotidiano, memórias, símbolos e imaginação,
+          convidando o público a descobrir diferentes possibilidades de interpretação.
+        </p>
+      </article>
+
+      <!-- Processo criativo -->
+      <article class="artista-texto">
+        <h2 class="revelar">Processo criativo</h2>
+        <p class="revelar delay-1">
+          O processo criativo de Cláudia Menegotto nasce da observação, da curiosidade
+          e da experimentação.
+        </p>
+        <p class="revelar delay-1">
+          Suas ideias nem sempre surgem completamente definidas. Muitas vezes, é durante
+          a execução que uma imagem ganha forma, um símbolo encontra seu lugar ou uma
+          história revela novos caminhos.
+        </p>
+        <p class="revelar delay-2">
+          No bordado, fios, cores e texturas constroem composições que ultrapassam a
+          representação literal. Na literatura, personagens e encontros abrem espaço para
+          reflexões sobre a experiência humana.
+        </p>
+        <p class="revelar delay-2">
+          Sem estabelecer interpretações definitivas, suas obras valorizam a liberdade de
+          criação e o olhar individual de quem as contempla.
+        </p>
+      </article>
+
     </div>
 
-    <!-- ── QUEM É + PROCESSO CRIATIVO (2 colunas) ── -->
-    <section class="artista-duas" aria-label="Sobre a artista">
-
-      <div class="revelar">
-        <h2>Quem é</h2>
-        <p>
-          Cláudia Menegotto é artista visual, escritora e criadora de projetos
-          autorais que transitam entre a arte têxtil, a literatura e o simbolismo.
-        </p>
-        <p>
-          Licenciada em Artes Visuais, desenvolve trabalhos que exploram
-          diferentes formas de expressão, utilizando o bordado, a escrita e a
-          criação de imagens como meios de investigação e construção de narrativas.
-        </p>
-        <p>
-          Sua produção reúne elementos do cotidiano, memórias, símbolos e
-          imaginação, convidando o público a descobrir diferentes possibilidades
-          de interpretação.
-        </p>
-      </div>
-
-      <div class="revelar delay-1">
-        <h2>Processo criativo</h2>
-        <p>
-          O processo criativo de Cláudia Menegotto nasce da observação, da
-          curiosidade e da experimentação.
-        </p>
-        <p>
-          Suas ideias nem sempre surgem completamente definidas. Muitas vezes,
-          é durante a execução que uma imagem ganha forma, um símbolo encontra
-          seu lugar ou uma história revela novos caminhos.
-        </p>
-        <p>
-          No bordado, fios, cores e texturas constroem composições que
-          ultrapassam a representação literal. Na literatura, personagens e
-          encontros abrem espaço para reflexões sobre a experiência humana.
-        </p>
-        <p>
-          Sem estabelecer interpretações definitivas, suas obras valorizam a
-          liberdade de criação e o olhar individual de quem as contempla.
-        </p>
-      </div>
-
-    </section>
-
-    <!-- ── TRAJETÓRIA (linha do tempo vertical) ── -->
-    <section class="trajetoria" aria-labelledby="trajetoria-titulo">
+    <!-- ── TRAJETÓRIA ── -->
+    <section class="artista-trajetoria" aria-labelledby="trajetoria-titulo">
       <h2 class="revelar" id="trajetoria-titulo">Trajetória</h2>
 
       <div class="timeline">
 
         <div class="timeline-item revelar">
-          <div class="timeline-status">Obra literária concluída</div>
-          <h3>A Jornada de Aurora</h3>
-          <p>
-            Obra literária de Cláudia Menegotto que acompanha Aurora em uma
-            viagem marcada por encontros, histórias e descobertas.
-          </p>
-          <p>
-            Ao lado de um pássaro azul, a protagonista conhece pessoas e
-            compartilha narrativas que despertam reflexões sobre a vida, as
-            escolhas e os diferentes caminhos da existência.
-          </p>
+          <div class="timeline-ano">Obra literária concluída</div>
+          <h3 class="timeline-titulo">A Jornada de Aurora</h3>
+          <div class="timeline-desc">
+            <p>
+              Obra literária de Cláudia Menegotto que acompanha Aurora em uma viagem
+              marcada por encontros, histórias e descobertas.
+            </p>
+            <p>
+              Ao lado de um pássaro azul, a protagonista conhece pessoas e compartilha
+              narrativas que despertam reflexões sobre a vida, as escolhas e os diferentes
+              caminhos da existência.
+            </p>
+            <a class="timeline-link" href="/obras/jornada-de-aurora/">Conhecer o livro →</a>
+          </div>
         </div>
 
         <div class="timeline-item revelar">
-          <div class="timeline-status">Coleção concluída · Exposição virtual em preparação</div>
-          <h3>A Jornada dos Arcanos — O Que os Fios Revelam</h3>
-          <p>
-            Coleção de 22 bordados autorais inspirados nos Arcanos Maiores do Tarô.
-          </p>
-          <p>
-            As figuras humanas tradicionais dão lugar a símbolos, formas e cores,
-            enquanto um fio dourado estabelece uma ligação entre as obras.
-          </p>
-          <p>
-            A coleção propõe uma experiência de observação e interpretação, na
-            qual cada visitante é convidado a construir seus próprios significados.
-          </p>
+          <div class="timeline-ano">Coleção concluída — Exposição virtual</div>
+          <h3 class="timeline-titulo">O Que os Fios Revelam</h3>
+          <div class="timeline-desc">
+            <p>
+              Coleção de 22 bordados autorais inspirados nos Arcanos Maiores do Tarô.
+            </p>
+            <p>
+              As figuras humanas tradicionais dão lugar a símbolos, formas e cores,
+              enquanto um fio dourado estabelece uma ligação entre as obras.
+            </p>
+            <p>
+              A coleção propõe uma experiência de observação e interpretação, na qual cada
+              visitante é convidado a construir seus próprios significados.
+            </p>
+            <a class="timeline-link" href="/obras/o-que-os-fios-revelam/">Visitar a exposição →</a>
+          </div>
         </div>
 
-        <div class="timeline-item em-curso revelar">
-          <div class="timeline-status">Em desenvolvimento</div>
-          <h3>Lenormand Gaúcho</h3>
-          <p>
-            Projeto autoral de 36 cartas que reinterpreta o tradicional baralho
-            Lenormand por meio de elementos da cultura, das expressões populares
-            e das paisagens do Rio Grande do Sul.
-          </p>
-          <p>
-            A proposta estabelece um diálogo entre o simbolismo tradicional das
-            cartas e a identidade cultural gaúcha.
-          </p>
+        <div class="timeline-item em-andamento revelar">
+          <div class="timeline-ano">Em desenvolvimento</div>
+          <h3 class="timeline-titulo">Lenormand Gaúcho</h3>
+          <div class="timeline-desc">
+            <p>
+              Projeto autoral de 36 cartas que reinterpreta o tradicional baralho Lenormand
+              por meio de elementos da cultura, das expressões populares e das paisagens
+              do Rio Grande do Sul.
+            </p>
+            <p>
+              A proposta estabelece um diálogo entre o simbolismo tradicional das cartas e
+              a identidade cultural gaúcha.
+            </p>
+          </div>
         </div>
 
       </div>

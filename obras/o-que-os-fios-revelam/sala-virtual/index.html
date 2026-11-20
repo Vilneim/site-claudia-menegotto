@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sala Virtual dos Arcanos — O Que os Fios Revelam — Cláudia Menegotto</title>
+  <meta name="description" content="Protótipo da Sala Virtual 3D dos Arcanos Maiores bordados por Cláudia Menegotto.">
+  <link rel="icon" href="/img/favicon.png">
+  <link rel="stylesheet" href="./sala.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <!-- ── BARRA SUPERIOR ── -->
+  <header class="sala-topbar">
+    <div class="sala-marca">
+      <span class="sala-eyebrow">Sala Virtual · Protótipo</span>
+      <h1>O Que os Fios Revelam</h1>
+    </div>
+    <a class="btn btn-outline sala-voltar" href="/obras/o-que-os-fios-revelam/">
+      ← Galeria tradicional
+    </a>
+  </header>
+
+  <!-- ── PALCO 3D ── -->
+  <main class="sala-palco" id="sala-palco">
+    <canvas id="sala-canvas" aria-label="Sala virtual tridimensional com os bordados dos Arcanos Maiores"></canvas>
+
+    <!-- Avisos de carregamento / erro de imagem -->
+    <div class="sala-avisos" id="sala-avisos" role="status" aria-live="polite" hidden></div>
+
+    <!-- Painel lateral direito (vertical no desktop, compacto no mobile) -->
+    <aside class="sala-hud" id="sala-hud" aria-label="Controles do passeio guiado">
+      <div class="hud-info">
+        <span class="hud-numero" id="hud-numero">ARCANO III</span>
+        <h2 class="hud-nome" id="hud-nome">A Imperatriz</h2>
+        <p class="hud-progresso" id="hud-progresso">Obra 1 de 3</p>
+      </div>
+
+      <div class="hud-controles">
+        <button class="btn btn-primary hud-btn-ver" id="btn-ver-obra" type="button">
+          Ver obra
+        </button>
+        <div class="hud-nav-par">
+          <button class="btn btn-outline" id="btn-anterior" type="button">
+            ← Anterior
+          </button>
+          <button class="btn btn-outline" id="btn-proximo" type="button">
+            Próximo →
+          </button>
+        </div>
+      </div>
+
+      <p class="hud-dica">Clique no bordado ou siga o fio dourado.</p>
+    </aside>
+
+    <!-- Alternativa acessível caso WebGL não esteja disponível -->
+    <section class="sala-fallback" id="sala-fallback" hidden aria-labelledby="fallback-titulo">
+      <div class="fallback-card">
+        <p class="sala-eyebrow">Modo Alternativo</p>
+        <h2 id="fallback-titulo">Seu navegador não suporta a visualização 3D (WebGL)</h2>
+        <p class="fallback-desc">
+          Você ainda pode observar as três obras deste protótipo em alta definição abaixo ou visitar a galeria tradicional completa.
+        </p>
+        <div class="fallback-grid" id="fallback-grid"></div>
+        <div class="fallback-acoes">
+          <a class="btn btn-primary" href="/obras/o-que-os-fios-revelam/">
+            Ir para a galeria completa
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── MODAL HTML DA OBRA AMPLIADA ── -->
+  <dialog id="modal-obra" aria-labelledby="modal-nome">
+    <button class="modal-fechar" id="modal-fechar" type="button" aria-label="Fechar janela">×</button>
+    <div class="modal-conteudo">
+      <div class="modal-foto" id="modal-foto"></div>
+      <div class="modal-info">
+        <p class="modal-numero" id="modal-numero"></p>
+        <h3 class="modal-nome" id="modal-nome"></h3>
+        <p class="modal-frase" id="modal-frase"></p>
+        <p class="modal-pergunta" id="modal-pergunta"></p>
+        <p class="modal-dica">Ao fechar esta janela, o passeio permanecerá parado até você escolher avançar ou voltar.</p>
+        <div class="modal-acoes">
+          <button class="btn btn-outline" id="modal-fechar-btn" type="button">
+            Voltar para a sala
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="./sala.js"></script>
+</body>
+</html>
