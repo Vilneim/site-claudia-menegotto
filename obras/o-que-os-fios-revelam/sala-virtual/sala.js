@@ -20,12 +20,12 @@ const CONFIG = {
   distanciaObservacaoMobile: 2.55,
 
   // Duração do deslocamento suave entre uma obra e a próxima (segundos)
-  duracaoTrecho: 2.1,
+  duracaoTrecho: 2.2,
 
-  // Resolução do tubo do fio dourado para extensão orgânica contínua
-  segmentosTubularesFio: 420,
-  segmentosRadiaisFio: 10,
-  raioFio: 0.015
+  // Geometria do fio dourado no piso
+  segmentosTubularesFio: 480,
+  segmentosRadiaisFio: 12,
+  raioFio: 0.024
 };
 
 /* =====================================================
@@ -98,7 +98,7 @@ const pontosObservacao = [];
 const curvasCameraTrechos = [];
 
 // Estado sincronizado da câmera e do fio dourado
-// progressoAtual varia continuamente de 0 (Obra 1) até ARCANOS_PROTOTIPO.length - 1 (última obra)
+// progressoAtual varia continuamente de 0 (Obra 1) até ARCANOS_PROTOTIPO.length - 1
 const estadoPercurso = {
   ativo: false,
   progressoAtual: 0,
@@ -215,7 +215,7 @@ modal.addEventListener('click', (e) => {
 });
 
 /* =====================================================
-   TEXTURAS PROCEDURAIS (Piso sépia suave e aviso de erro)
+   TEXTURAS PROCEDURAIS (Piso, Reflexo Dourado e Erro)
    ===================================================== */
 function criarTexturaPisoMadeira() {
   const c = document.createElement('canvas');
@@ -246,6 +246,33 @@ function criarTexturaPisoMadeira() {
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(5, 10);
+  return tex;
+}
+
+// Mapa de reflexão quente leve para o ouro refletir luz real em vez de preto
+function criarMapaReflexoDourado() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 128;
+  const ctx = c.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 128);
+  grad.addColorStop(0.0,  '#FFFDF2');
+  grad.addColorStop(0.28, '#FFE699');
+  grad.addColorStop(0.50, '#F5C443');
+  grad.addColorStop(0.72, '#C88D1E');
+  grad.addColorStop(1.0,  '#7D5510');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 128);
+
+  // Faixas luminosas suaves simulando os focos de luz da galeria
+  ctx.fillStyle = 'rgba(255, 252, 235, 0.85)';
+  ctx.fillRect(24, 18, 48, 22);
+  ctx.fillRect(148, 22, 64, 20);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.mapping = THREE.EquirectangularReflectionMapping;
   return tex;
 }
 
@@ -292,7 +319,7 @@ function iniciarCena3D() {
   cena.fog = new THREE.Fog(0xEDE6D8, 12, 24);
 
   const camera = new THREE.PerspectiveCamera(
-    45,
+    47,
     window.innerWidth / window.innerHeight,
     0.1,
     40
@@ -385,16 +412,16 @@ function iniciarCena3D() {
   rodapeFundo.position.set(0, 0.07, centroZ - comprimentoSala / 2 + 0.03);
   cena.add(rodapeFundo);
 
-  /* ── Fio Dourado Dinâmico no Piso ── */
-  // Traçado orgânico que nasce próximo à entrada e conduz até diante de cada obra
+  /* ── Fio Dourado Dinâmico no Piso (ligando a entrada e a base de cada obra) ── */
+  const yFio = CONFIG.raioFio + 0.002;
   const pontosChaoFio = [
-    new THREE.Vector3(0.05,  0.015,  3.55), // Entrada da sala
-    new THREE.Vector3(-0.32, 0.015,  2.15),
-    new THREE.Vector3(-0.52, 0.015,  0.55), // Diante de A Imperatriz (parada 0)
-    new THREE.Vector3(0.12,  0.015, -1.55), // Curva orgânica central
-    new THREE.Vector3(0.54,  0.015, -3.55), // Diante de A Morte (parada 1)
-    new THREE.Vector3(-0.12, 0.015, -5.65), // Curva orgânica central
-    new THREE.Vector3(-0.52, 0.015, -7.55)  // Diante de O Sol (parada 2)
+    new THREE.Vector3(0.05,  yFio,  3.45), // Entrada da sala
+    new THREE.Vector3(-0.48, yFio,  1.25), // Curva de entrada
+    new THREE.Vector3(-1.25, yFio, -1.05), // Base de A Imperatriz (parada 0)
+    new THREE.Vector3(0.08,  yFio, -3.10), // Curva orgânica ligando Imperatriz -> Morte
+    new THREE.Vector3(1.25,  yFio, -5.05), // Base de A Morte (parada 1)
+    new THREE.Vector3(-0.08, yFio, -7.10), // Curva orgânica ligando Morte -> Sol
+    new THREE.Vector3(-1.25, yFio, -9.05)  // Base de O Sol (parada 2)
   ];
 
   const curvaFio = new THREE.CatmullRomCurve3(pontosChaoFio, false, 'catmullrom', 0.5);
@@ -407,25 +434,32 @@ function iniciarCena3D() {
     false
   );
 
+  // Material dourado luminoso com mapa de reflexão quente
   const fioMat = new THREE.MeshStandardMaterial({
-    color: 0xC49A50,
+    color: 0xF5C542,
     metalness: 0.72,
-    roughness: 0.28,
-    emissive: 0x3D2A09,
-    emissiveIntensity: 0.24
+    roughness: 0.22,
+    envMap: criarMapaReflexoDourado(),
+    envMapIntensity: 1.35,
+    emissive: 0x9C6B12,
+    emissiveIntensity: 0.36
   });
 
   const fioDourado = new THREE.Mesh(fioGeo, fioMat);
   cena.add(fioDourado);
 
-  // Extremidade arredondada e delicada na ponta atual do fio
+  // Extremidade delicada na ponta mais avançada do fio
   const pontaFio = new THREE.Mesh(
-    new THREE.SphereGeometry(CONFIG.raioFio * 1.12, 12, 12),
+    new THREE.SphereGeometry(CONFIG.raioFio * 1.15, 14, 14),
     fioMat
   );
   cena.add(pontaFio);
 
-  // Calcula o parâmetro exato (0..1) na curva do fio para cada uma das 3 paradas
+  // Brilho dourado sutil no piso acompanhando o visitante ao longo do fio
+  const luzFio = new THREE.PointLight(0xFFD966, 1.4, 2.2, 2);
+  cena.add(luzFio);
+
+  // Parâmetro exato (0..1) na curva do fio para a base de cada obra
   const alvosChaoParadas = [
     pontosChaoFio[2], // A Imperatriz
     pontosChaoFio[4], // A Morte
@@ -435,7 +469,7 @@ function iniciarCena3D() {
   const tParadasFio = alvosChaoParadas.map((alvo) => {
     let melhorT = 0;
     let menorDist = Infinity;
-    const amostras = 1000;
+    const amostras = 1200;
     for (let i = 0; i <= amostras; i++) {
       const t = i / amostras;
       const dist = curvaFio.getPointAt(t).distanceToSquared(alvo);
@@ -447,15 +481,18 @@ function iniciarCena3D() {
     return melhorT;
   });
 
-  function mapearProgressoParaFio(progresso) {
+  // Mapeia o progresso (0..2) para o parâmetro da curva do fio,
+  // dando um leve adiantamento orgânico durante o trajeto para o fio conduzir à frente
+  function mapearProgressoParaFio(progresso, comAdiantamento = true) {
     const ultimoIdx = ARCANOS_PROTOTIPO.length - 1;
     const p = THREE.MathUtils.clamp(progresso, 0, ultimoIdx);
     const seg = Math.min(Math.floor(p), ultimoIdx - 1);
     const u = p - seg;
-    return THREE.MathUtils.lerp(tParadasFio[seg], tParadasFio[seg + 1], u);
+    const uCurva = comAdiantamento ? Math.pow(u, 0.72) : u;
+    return THREE.MathUtils.lerp(tParadasFio[seg], tParadasFio[seg + 1], uCurva);
   }
 
-  function atualizarGeometriaFio(tVisivel) {
+  function atualizarGeometriaFio(tVisivel, tPosicaoAtual) {
     const tLimitado = THREE.MathUtils.clamp(tVisivel, 0.002, 1);
     const segsVisiveis = Math.max(
       1,
@@ -466,6 +503,9 @@ function iniciarCena3D() {
 
     const pontoPonta = curvaFio.getPointAt(tLimitado);
     pontaFio.position.copy(pontoPonta);
+
+    const pontoLuz = curvaFio.getPointAt(THREE.MathUtils.clamp(tPosicaoAtual, 0.002, 1));
+    luzFio.position.set(pontoLuz.x, 0.28, pontoLuz.z);
   }
 
   /* ── Materiais dos Cavaletes e Molduras ── */
@@ -627,19 +667,15 @@ function iniciarCena3D() {
     const meiaAlturaVisivel = distancia * Math.tan(fovRad / 2);
     const meiaLarguraVisivel = meiaAlturaVisivel * camera.aspect;
 
-    // Mede o painel HUD real na tela para manter a obra na área livre
     const rectHud = hud.getBoundingClientRect();
     let offsetLateral = 0;
     let offsetVertical = 0;
 
     if (!ehMobile && rectHud.width > 0) {
-      // HUD na lateral direita: desloca o enquadramento para a direita,
-      // projetando o bordado centralizado na área livre à esquerda do painel
       const espacoDireito = rectHud.width + 24;
       const fracaoOcupada = Math.min(espacoDireito / window.innerWidth, 0.34);
       offsetLateral = meiaLarguraVisivel * fracaoOcupada * 0.92;
     } else if (ehMobile && rectHud.height > 0) {
-      // HUD compacto na base: eleva levemente o bordado na área livre acima do painel
       const fracaoInferior = Math.min((rectHud.height + 16) / window.innerHeight, 0.28);
       offsetVertical = -meiaAlturaVisivel * fracaoInferior * 0.65;
     }
@@ -651,7 +687,6 @@ function iniciarCena3D() {
         Math.cos(arcano.posicao.rotY)
       ).normalize();
 
-      // Vetor "direita" sob o ponto de vista da câmera olhando para o bordado
       const dirOlhar = dirFrontal.clone().negate();
       const vetorDireita = new THREE.Vector3().crossVectors(dirOlhar, EIXO_Y).normalize();
 
@@ -670,18 +705,16 @@ function iniciarCena3D() {
       pontosObservacao[i] = { posicao, alvo };
     });
 
-    // Cria uma curva suave para a câmera em cada trecho, acompanhando o sinuoso do fio no piso
+    // Curva suave da câmera em cada trecho, acompanhando o corredor do fio
     curvasCameraTrechos.length = 0;
     for (let i = 0; i < ARCANOS_PROTOTIPO.length - 1; i++) {
       const pInicio = pontosObservacao[i].posicao;
       const pFim = pontosObservacao[i + 1].posicao;
 
-      const tMedioFio = (tParadasFio[i] + tParadasFio[i + 1]) * 0.5;
-      const pontoFioMedio = curvaFio.getPointAt(tMedioFio);
       const pontoControle = new THREE.Vector3(
-        pontoFioMedio.x,
+        (pInicio.x + pFim.x) * 0.5,
         (pInicio.y + pFim.y) * 0.5,
-        pontoFioMedio.z
+        (pInicio.z + pFim.z) * 0.5
       );
 
       curvasCameraTrechos.push(new THREE.QuadraticBezierCurve3(pInicio, pontoControle, pFim));
@@ -699,28 +732,28 @@ function iniciarCena3D() {
     const seg = Math.min(Math.floor(p), ultimoIdx - 1);
     const u = p - seg;
 
-    // 1. Posição suave da câmera acompanhando a curva associada ao fio
+    // 1. Posição suave da câmera ao longo do trecho
     curvasCameraTrechos[seg].getPoint(u, tempPos);
     camera.position.copy(tempPos);
 
-    // 2. Direção do olhar: nas paradas olha diretamente para a obra;
-    //    no meio do trajeto acompanha suavemente a direção do fio no corredor
-    tempAlvo.lerpVectors(pontosObservacao[seg].alvo, pontosObservacao[seg + 1].alvo, u);
-    const tFioAtual = mapearProgressoParaFio(p);
-    const pesoGuia = Math.sin(u * Math.PI) * 0.32;
-    if (pesoGuia > 0.001) {
-      curvaFio.getPointAt(Math.min(1, tFioAtual + 0.04), tempGuiaFio);
-      tempGuiaFio.y = CONFIG.alturaCentroObra * 0.72;
-      tempAlvo.lerp(tempGuiaFio, pesoGuia);
-    }
-    camera.lookAt(tempAlvo);
-
-    // 3. Fio dourado: estende-se sincronizado e mantém sempre visível o trecho já percorrido
+    // 2. Fio dourado sincronizado: avança à frente da câmera e mantém visível o trecho já percorrido
+    const tFioAtual = mapearProgressoParaFio(p, true);
     if (p > estadoPercurso.progressoMaximoFio) {
       estadoPercurso.progressoMaximoFio = p;
     }
-    const tVisivelFio = mapearProgressoParaFio(estadoPercurso.progressoMaximoFio);
-    atualizarGeometriaFio(tVisivelFio);
+    const tVisivelFio = mapearProgressoParaFio(estadoPercurso.progressoMaximoFio, true);
+    atualizarGeometriaFio(tVisivelFio, tFioAtual);
+
+    // 3. Direção do olhar: nas paradas olha diretamente para a obra;
+    //    durante a caminhada inclina suavemente para acompanhar o fio dourado no piso
+    tempAlvo.lerpVectors(pontosObservacao[seg].alvo, pontosObservacao[seg + 1].alvo, u);
+    const pesoGuia = Math.sin(u * Math.PI) * 0.62;
+    if (pesoGuia > 0.001) {
+      curvaFio.getPointAt(tFioAtual, tempGuiaFio);
+      tempGuiaFio.y = 0.28;
+      tempAlvo.lerp(tempGuiaFio, pesoGuia);
+    }
+    camera.lookAt(tempAlvo);
   }
 
   /* ── HUD e Navegação Guiada ── */
@@ -755,12 +788,12 @@ function iniciarCena3D() {
 
     estadoPercurso.progressoInicio = estadoPercurso.progressoAtual;
     estadoPercurso.progressoDestino = alvoClamped;
-    estadoPercurso.duracaoMs = Math.max(550, distanciaProgresso * CONFIG.duracaoTrecho * 1000);
+    estadoPercurso.duracaoMs = Math.max(600, distanciaProgresso * CONFIG.duracaoTrecho * 1000);
     estadoPercurso.inicioTempo = performance.now();
     estadoPercurso.ativo = true;
   }
 
-  // Inicializa enquadramento diante da primeira obra com o fio traçado desde a entrada
+  // Inicializa enquadramento diante da primeira obra com o fio já traçado da entrada até ela
   recalcularPontosEPercursos();
   iniciarDeslocamentoPara(0, true);
 

@@ -299,12 +299,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-outline {
-  color: var(--text);
-  border-color: var(--gold-pale);
+  background: var(--gold);
+  color: var(--white);
+  border-color: var(--gold);
 }
 .btn-outline:hover {
-  background: var(--gold-pale);
-  border-color: var(--gold);
+  background: var(--gold-light);
+  border-color: var(--gold-light);
 }
 
 .btn-icon {
