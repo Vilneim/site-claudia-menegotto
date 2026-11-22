@@ -445,8 +445,13 @@ dialog::backdrop {
     bottom: .75rem;
     transform: none;
     width: auto;
-    padding: .75rem .9rem;
-    gap: .65rem;
+    padding: .7rem .85rem;
+    gap: .6rem;
+    background: rgba(253, 250, 245, .38);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-color: rgba(221, 213, 197, .65);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .06);
   }
 
   .hud-info {
@@ -455,7 +460,9 @@ dialog::backdrop {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: .2rem .75rem;
-    padding-bottom: .55rem;
+    padding-bottom: .5rem;
+    border-bottom-color: rgba(221, 213, 197, .55);
+    text-shadow: 0 1px 6px rgba(253, 250, 245, .9);
   }
 
   .hud-numero {
@@ -470,6 +477,7 @@ dialog::backdrop {
   .hud-progresso {
     margin-top: 0;
     font-size: .74rem;
+    color: var(--text);
   }
 
   .hud-controles {
@@ -483,11 +491,14 @@ dialog::backdrop {
     width: auto;
     padding: .62rem .95rem;
     font-size: .78rem;
+    background: rgba(160, 120, 48, .82);
   }
 
   .hud-nav-par .btn {
     padding: .62rem .5rem;
     font-size: .76rem;
+    background: rgba(253, 250, 245, .52);
+    border-color: rgba(160, 120, 48, .38);
   }
 
   .hud-dica {
