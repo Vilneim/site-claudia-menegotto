@@ -17,7 +17,7 @@ const CONFIG = {
 
   // Distância frontal diante de cada bordado
   distanciaObservacaoDesktop: 2.18,
-  distanciaObservacaoMobile: 2.55,
+  distanciaObservacaoMobile: 2.70,
 
   // Duração do deslocamento suave entre uma obra e a próxima (segundos)
   duracaoTrecho: 2.2,
@@ -66,7 +66,10 @@ const ARCANOS_PROTOTIPO = [
    ELEMENTOS DE INTERFACE
    ===================================================== */
 const canvas         = document.getElementById('sala-canvas');
+const topbar         = document.querySelector('.sala-topbar');
 const hud            = document.getElementById('sala-hud');
+const hudInfo        = document.querySelector('.hud-info');
+const hudControles   = document.querySelector('.hud-controles');
 const hudNumero      = document.getElementById('hud-numero');
 const hudNome        = document.getElementById('hud-nome');
 const hudProgresso   = document.getElementById('hud-progresso');
@@ -97,14 +100,12 @@ const obrasInterativas = [];
 const pontosObservacao = [];
 const curvasCameraTrechos = [];
 
-// Estado sincronizado da câmera e do fio dourado
-// progressoAtual varia continuamente de 0 (Obra 1) até ARCANOS_PROTOTIPO.length - 1
 const estadoPercurso = {
   ativo: false,
   progressoAtual: 0,
   progressoInicio: 0,
   progressoDestino: 0,
-  progressoMaximoFio: 0, // Mantém visível todo o trecho já percorrido
+  progressoMaximoFio: 0,
   inicioTempo: 0,
   duracaoMs: CONFIG.duracaoTrecho * 1000
 };
@@ -171,7 +172,6 @@ function interromperPercurso() {
 }
 
 function abrirModal(indice) {
-  // Interrompe imediatamente tanto a câmera quanto o avanço do fio
   interromperPercurso();
 
   const arcano = ARCANOS_PROTOTIPO[indice];
@@ -205,7 +205,6 @@ function fecharModal() {
   if (modal.open) {
     modal.close();
   }
-  // Permanece parado até uma nova ação explícita do visitante
 }
 
 modalFechar.addEventListener('click', fecharModal);
@@ -249,7 +248,6 @@ function criarTexturaPisoMadeira() {
   return tex;
 }
 
-// Mapa de reflexão quente leve para o ouro refletir luz real em vez de preto
 function criarMapaReflexoDourado() {
   const c = document.createElement('canvas');
   c.width = 256;
@@ -265,7 +263,6 @@ function criarMapaReflexoDourado() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 256, 128);
 
-  // Faixas luminosas suaves simulando os focos de luz da galeria
   ctx.fillStyle = 'rgba(255, 252, 235, 0.85)';
   ctx.fillRect(24, 18, 48, 22);
   ctx.fillRect(148, 22, 64, 20);
@@ -354,7 +351,7 @@ function iniciarCena3D() {
   const larguraSala = 7.6;
   const alturaSala = 4.0;
   const comprimentoSala = 16.0;
-  const centroZ = -4.0; // Vai de z = +4.0 (entrada) até z = -12.0 (fundo)
+  const centroZ = -4.0;
 
   const pisoMat = new THREE.MeshStandardMaterial({
     map: criarTexturaPisoMadeira(),
@@ -412,16 +409,16 @@ function iniciarCena3D() {
   rodapeFundo.position.set(0, 0.07, centroZ - comprimentoSala / 2 + 0.03);
   cena.add(rodapeFundo);
 
-  /* ── Fio Dourado Dinâmico no Piso (ligando a entrada e a base de cada obra) ── */
+  /* ── Fio Dourado Dinâmico no Piso ── */
   const yFio = CONFIG.raioFio + 0.002;
   const pontosChaoFio = [
-    new THREE.Vector3(0.05,  yFio,  3.45), // Entrada da sala
-    new THREE.Vector3(-0.48, yFio,  1.25), // Curva de entrada
-    new THREE.Vector3(-1.25, yFio, -1.05), // Base de A Imperatriz (parada 0)
-    new THREE.Vector3(0.08,  yFio, -3.10), // Curva orgânica ligando Imperatriz -> Morte
-    new THREE.Vector3(1.25,  yFio, -5.05), // Base de A Morte (parada 1)
-    new THREE.Vector3(-0.08, yFio, -7.10), // Curva orgânica ligando Morte -> Sol
-    new THREE.Vector3(-1.25, yFio, -9.05)  // Base de O Sol (parada 2)
+    new THREE.Vector3(0.05,  yFio,  3.45),
+    new THREE.Vector3(-0.48, yFio,  1.25),
+    new THREE.Vector3(-1.25, yFio, -1.05),
+    new THREE.Vector3(0.08,  yFio, -3.10),
+    new THREE.Vector3(1.25,  yFio, -5.05),
+    new THREE.Vector3(-0.08, yFio, -7.10),
+    new THREE.Vector3(-1.25, yFio, -9.05)
   ];
 
   const curvaFio = new THREE.CatmullRomCurve3(pontosChaoFio, false, 'catmullrom', 0.5);
@@ -434,7 +431,6 @@ function iniciarCena3D() {
     false
   );
 
-  // Material dourado luminoso com mapa de reflexão quente
   const fioMat = new THREE.MeshStandardMaterial({
     color: 0xF5C542,
     metalness: 0.72,
@@ -448,22 +444,19 @@ function iniciarCena3D() {
   const fioDourado = new THREE.Mesh(fioGeo, fioMat);
   cena.add(fioDourado);
 
-  // Extremidade delicada na ponta mais avançada do fio
   const pontaFio = new THREE.Mesh(
     new THREE.SphereGeometry(CONFIG.raioFio * 1.15, 14, 14),
     fioMat
   );
   cena.add(pontaFio);
 
-  // Brilho dourado sutil no piso acompanhando o visitante ao longo do fio
   const luzFio = new THREE.PointLight(0xFFD966, 1.4, 2.2, 2);
   cena.add(luzFio);
 
-  // Parâmetro exato (0..1) na curva do fio para a base de cada obra
   const alvosChaoParadas = [
-    pontosChaoFio[2], // A Imperatriz
-    pontosChaoFio[4], // A Morte
-    pontosChaoFio[6]  // O Sol
+    pontosChaoFio[2],
+    pontosChaoFio[4],
+    pontosChaoFio[6]
   ];
 
   const tParadasFio = alvosChaoParadas.map((alvo) => {
@@ -481,8 +474,6 @@ function iniciarCena3D() {
     return melhorT;
   });
 
-  // Mapeia o progresso (0..2) para o parâmetro da curva do fio,
-  // dando um leve adiantamento orgânico durante o trajeto para o fio conduzir à frente
   function mapearProgressoParaFio(progresso, comAdiantamento = true) {
     const ultimoIdx = ARCANOS_PROTOTIPO.length - 1;
     const p = THREE.MathUtils.clamp(progresso, 0, ultimoIdx);
@@ -614,7 +605,6 @@ function iniciarCena3D() {
       dir.position.x = largura / 2 + espessuraMoldura / 2;
       grupoQuadro.add(dir);
 
-      // Fotografia original sem alteração de cor pela iluminação
       const fotoGeo = new THREE.PlaneGeometry(largura, altura);
       const fotoMat = new THREE.MeshBasicMaterial({
         map: textura,
@@ -659,25 +649,35 @@ function iniciarCena3D() {
 
   ARCANOS_PROTOTIPO.forEach((arcano, i) => construirCavaleteComObra(arcano, i));
 
-  /* ── Cálculo dos Pontos de Observação (compensando o espaço do HUD) ── */
+  /* ── Cálculo dos Pontos de Observação (mantendo a obra na área livre) ── */
   function recalcularPontosEPercursos() {
+    if (topbar) {
+      document.documentElement.style.setProperty('--topbar-h', `${topbar.getBoundingClientRect().height}px`);
+    }
+
     const ehMobile = window.matchMedia('(max-width: 820px)').matches;
     const distancia = ehMobile ? CONFIG.distanciaObservacaoMobile : CONFIG.distanciaObservacaoDesktop;
     const fovRad = THREE.MathUtils.degToRad(camera.fov);
     const meiaAlturaVisivel = distancia * Math.tan(fovRad / 2);
     const meiaLarguraVisivel = meiaAlturaVisivel * camera.aspect;
 
-    const rectHud = hud.getBoundingClientRect();
     let offsetLateral = 0;
     let offsetVertical = 0;
 
-    if (!ehMobile && rectHud.width > 0) {
-      const espacoDireito = rectHud.width + 24;
-      const fracaoOcupada = Math.min(espacoDireito / window.innerWidth, 0.34);
-      offsetLateral = meiaLarguraVisivel * fracaoOcupada * 0.92;
-    } else if (ehMobile && rectHud.height > 0) {
-      const fracaoInferior = Math.min((rectHud.height + 16) / window.innerHeight, 0.28);
-      offsetVertical = -meiaAlturaVisivel * fracaoInferior * 0.65;
+    if (!ehMobile) {
+      const rectHud = hud.getBoundingClientRect();
+      if (rectHud.width > 0) {
+        const espacoDireito = rectHud.width + 24;
+        const fracaoOcupada = Math.min(espacoDireito / window.innerWidth, 0.34);
+        offsetLateral = meiaLarguraVisivel * fracaoOcupada * 0.92;
+      }
+    } else {
+      // Calcula o centro exato da área livre entre a barra de título do Arcano (topo) e os botões (base)
+      const topoLivre = hudInfo ? hudInfo.getBoundingClientRect().bottom : 112;
+      const baseLivre = hudControles ? hudControles.getBoundingClientRect().top : window.innerHeight - 72;
+      const centroLivreY = (topoLivre + baseLivre) * 0.5;
+      const deslocamentoNormY = (centroLivreY / window.innerHeight) - 0.5;
+      offsetVertical = meiaAlturaVisivel * 2 * deslocamentoNormY;
     }
 
     ARCANOS_PROTOTIPO.forEach((arcano, i) => {
@@ -705,7 +705,6 @@ function iniciarCena3D() {
       pontosObservacao[i] = { posicao, alvo };
     });
 
-    // Curva suave da câmera em cada trecho, acompanhando o corredor do fio
     curvasCameraTrechos.length = 0;
     for (let i = 0; i < ARCANOS_PROTOTIPO.length - 1; i++) {
       const pInicio = pontosObservacao[i].posicao;
@@ -732,11 +731,9 @@ function iniciarCena3D() {
     const seg = Math.min(Math.floor(p), ultimoIdx - 1);
     const u = p - seg;
 
-    // 1. Posição suave da câmera ao longo do trecho
     curvasCameraTrechos[seg].getPoint(u, tempPos);
     camera.position.copy(tempPos);
 
-    // 2. Fio dourado sincronizado: avança à frente da câmera e mantém visível o trecho já percorrido
     const tFioAtual = mapearProgressoParaFio(p, true);
     if (p > estadoPercurso.progressoMaximoFio) {
       estadoPercurso.progressoMaximoFio = p;
@@ -744,8 +741,6 @@ function iniciarCena3D() {
     const tVisivelFio = mapearProgressoParaFio(estadoPercurso.progressoMaximoFio, true);
     atualizarGeometriaFio(tVisivelFio, tFioAtual);
 
-    // 3. Direção do olhar: nas paradas olha diretamente para a obra;
-    //    durante a caminhada inclina suavemente para acompanhar o fio dourado no piso
     tempAlvo.lerpVectors(pontosObservacao[seg].alvo, pontosObservacao[seg + 1].alvo, u);
     const pesoGuia = Math.sin(u * Math.PI) * 0.62;
     if (pesoGuia > 0.001) {
@@ -793,7 +788,6 @@ function iniciarCena3D() {
     estadoPercurso.ativo = true;
   }
 
-  // Inicializa enquadramento diante da primeira obra com o fio já traçado da entrada até ela
   recalcularPontosEPercursos();
   iniciarDeslocamentoPara(0, true);
 
