@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ARCANOS, urlMiniatura, urlGrande } from './arcanos-data.js';
 
 /* =====================================================
    CONFIGURAÇÕES PRINCIPAIS (ajustáveis)
@@ -11,9 +12,17 @@ const CONFIG = {
   // Dimensões máximas da fotografia na cena (em metros), preservando proporção
   larguraMaxObra: 0.92,
   alturaMaxObra: 1.22,
-
-  // Altura do centro da obra em relação ao piso
   alturaCentroObra: 1.50,
+
+  // Layout programático do corredor para os 22 cavaletes
+  larguraSala: 7.6,
+  alturaSala: 4.0,
+  xCavalete: 1.85,
+  zInicialCavalete: -1.2,
+  passoZ: 4.0,
+  rotacaoCavalete: Math.PI * 0.22,
+  margemEntrada: 5.2,
+  margemFundo: 4.2,
 
   // Distância frontal diante de cada bordado
   distanciaObservacaoDesktop: 2.18,
@@ -23,44 +32,15 @@ const CONFIG = {
   duracaoTrecho: 2.2,
 
   // Geometria do fio dourado no piso
-  segmentosTubularesFio: 480,
-  segmentosRadiaisFio: 12,
-  raioFio: 0.024
-};
+  segmentosPorTrechoFio: 48,
+  segmentosRadiaisFio: 8,
+  raioFio: 0.024,
 
-/* =====================================================
-   DADOS DO PROTÓTIPO (3 Arcanos)
-   Textos e caminhos preservados do site original
-   ===================================================== */
-const ARCANOS_PROTOTIPO = [
-  {
-    n: 3,
-    romano: 'III',
-    nome: 'A Imperatriz',
-    imagem: '/img/arcanos/03-a-imperatriz.webp',
-    frase: 'A criação que floresce quando é cuidada.',
-    pergunta: 'O que em você pede para nascer?',
-    posicao: { x: -1.85, z: -1.2, rotY: Math.PI * 0.22 }
-  },
-  {
-    n: 13,
-    romano: 'XIII',
-    nome: 'A Morte',
-    imagem: '/img/arcanos/13-a-morte.webp',
-    frase: 'O que termina abre espaço para o que vem.',
-    pergunta: 'O que já cumpriu o seu tempo?',
-    posicao: { x: 1.85, z: -5.2, rotY: -Math.PI * 0.22 }
-  },
-  {
-    n: 19,
-    romano: 'XIX',
-    nome: 'O Sol',
-    imagem: '/img/arcanos/19-o-sol.webp',
-    frase: 'A clareza, a alegria e a vida à luz do dia.',
-    pergunta: 'O que merece ser celebrado agora?',
-    posicao: { x: -1.85, z: -9.2, rotY: Math.PI * 0.22 }
-  }
-];
+  // Otimização de memória e carregamento progressivo
+  raioCarregamento: 3,       // Carrega obras a até 3 posições da câmera
+  raioDescarte: 5,           // Libera texturas (dispose) além de 5 posições
+  maxCarregamentosSimultaneos: 2
+};
 
 /* =====================================================
    ELEMENTOS DE INTERFACE
@@ -90,7 +70,27 @@ const modalFechar    = document.getElementById('modal-fechar');
 const modalFecharBtn = document.getElementById('modal-fechar-btn');
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const modoDebug = new URLSearchParams(window.location.search).get('debug') === '1';
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
+
+/* =====================================================
+   POSIÇÕES PROGRAMÁTICAS DOS 22 ARCANOS
+   ===================================================== */
+const OBRAS = ARCANOS.map((arcano, i) => {
+  const lado = i % 2 === 0 ? -1 : 1; // Alterna esquerda (-1) e direita (+1)
+  return {
+    ...arcano,
+    indice: i,
+    lado,
+    urlMini: urlMiniatura(arcano),
+    urlGrande: urlGrande(arcano),
+    posicao: {
+      x: lado * CONFIG.xCavalete,
+      z: CONFIG.zInicialCavalete - i * CONFIG.passoZ,
+      rotY: -lado * CONFIG.rotacaoCavalete
+    }
+  };
+});
 
 /* =====================================================
    ESTADO DA APLICAÇÃO
@@ -125,7 +125,10 @@ function verificarWebGL() {
   }
 }
 
+const avisosRegistrados = new Set();
 function registrarAviso(mensagem) {
+  if (avisosRegistrados.has(mensagem)) return;
+  avisosRegistrados.add(mensagem);
   avisosEl.hidden = false;
   const p = document.createElement('p');
   p.textContent = mensagem;
@@ -138,25 +141,26 @@ function ativarFallbackSemWebGL() {
   hud.hidden = true;
   fallbackEl.hidden = false;
 
-  ARCANOS_PROTOTIPO.forEach((arcano, i) => {
+  OBRAS.forEach((obra, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'fallback-item';
 
     const img = document.createElement('img');
-    img.src = arcano.imagem;
-    img.alt = `Bordado do Arcano ${arcano.nome}`;
+    img.src = obra.urlMini;
+    img.alt = `Bordado do Arcano ${obra.nome}`;
+    img.loading = 'lazy';
     img.addEventListener('error', () => {
       img.remove();
       const erro = document.createElement('div');
       erro.className = 'modal-erro-foto';
-      erro.textContent = `Imagem não encontrada: ${arcano.imagem}`;
+      erro.textContent = `Imagem não encontrada: ${obra.urlMini}`;
       btn.prepend(erro);
     });
 
     const legenda = document.createElement('span');
     legenda.className = 'fallback-item-legenda';
-    legenda.innerHTML = `<strong>${arcano.romano}</strong>${arcano.nome}`;
+    legenda.innerHTML = `<strong>${obra.romano}</strong>${obra.nome}`;
 
     btn.append(img, legenda);
     btn.addEventListener('click', () => abrirModal(i));
@@ -165,7 +169,7 @@ function ativarFallbackSemWebGL() {
 }
 
 /* =====================================================
-   MODAL ACESSÍVEL
+   MODAL ACESSÍVEL (Carrega foto grande somente aqui)
    ===================================================== */
 function interromperPercurso() {
   estadoPercurso.ativo = false;
@@ -174,27 +178,27 @@ function interromperPercurso() {
 function abrirModal(indice) {
   interromperPercurso();
 
-  const arcano = ARCANOS_PROTOTIPO[indice];
-  if (!arcano) return;
+  const obra = OBRAS[indice];
+  if (!obra) return;
 
   modalFoto.innerHTML = '';
   const img = document.createElement('img');
-  img.src = arcano.imagem;
-  img.alt = `Bordado do Arcano ${arcano.nome}, ampliado`;
+  img.src = obra.urlGrande;
+  img.alt = `Bordado do Arcano ${obra.nome}, ampliado`;
 
   img.addEventListener('error', () => {
     img.remove();
     const erro = document.createElement('div');
     erro.className = 'modal-erro-foto';
-    erro.textContent = `Não foi possível carregar a fotografia original em "${arcano.imagem}". Verifique se o arquivo existe nesta pasta.`;
+    erro.textContent = `Não foi possível carregar a fotografia original em "${obra.urlGrande}".`;
     modalFoto.appendChild(erro);
   });
 
   modalFoto.appendChild(img);
-  modalNumero.textContent = `ARCANO ${arcano.romano}`;
-  modalNome.textContent = arcano.nome;
-  modalFrase.textContent = arcano.frase;
-  modalPergunta.textContent = arcano.pergunta;
+  modalNumero.textContent = `ARCANO ${obra.romano}`;
+  modalNome.textContent = obra.nome;
+  modalFrase.textContent = obra.frase;
+  modalPergunta.textContent = obra.pergunta;
 
   if (!modal.open) {
     modal.showModal();
@@ -205,6 +209,7 @@ function fecharModal() {
   if (modal.open) {
     modal.close();
   }
+  // Permanece parado onde estava até nova ação do visitante
 }
 
 modalFechar.addEventListener('click', fecharModal);
@@ -214,9 +219,9 @@ modal.addEventListener('click', (e) => {
 });
 
 /* =====================================================
-   TEXTURAS PROCEDURAIS (Piso, Reflexo Dourado e Erro)
+   TEXTURAS PROCEDURAIS COMPARTILHADAS
    ===================================================== */
-function criarTexturaPisoMadeira() {
+function criarTexturaPisoMadeira(comprimentoSala) {
   const c = document.createElement('canvas');
   c.width = 512;
   c.height = 512;
@@ -228,8 +233,7 @@ function criarTexturaPisoMadeira() {
   const tabuas = 8;
   const largTabua = 512 / tabuas;
   for (let i = 0; i < tabuas; i++) {
-    const tom = i % 2 === 0 ? 'rgba(130, 102, 74, 0.12)' : 'rgba(244, 239, 230, 0.08)';
-    ctx.fillStyle = tom;
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(130, 102, 74, 0.12)' : 'rgba(244, 239, 230, 0.08)';
     ctx.fillRect(i * largTabua, 0, largTabua, 512);
 
     ctx.strokeStyle = 'rgba(78, 60, 42, 0.22)';
@@ -244,7 +248,7 @@ function criarTexturaPisoMadeira() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(5, 10);
+  tex.repeat.set(5, Math.max(10, Math.round(comprimentoSala / 1.6)));
   return tex;
 }
 
@@ -273,10 +277,10 @@ function criarMapaReflexoDourado() {
   return tex;
 }
 
-function criarTexturaErroImagem(arcano) {
+function criarTexturaErroImagem(obra) {
   const c = document.createElement('canvas');
-  c.width = 600;
-  c.height = 800;
+  c.width = 480;
+  c.height = 640;
   const ctx = c.getContext('2d');
 
   ctx.fillStyle = '#231F1A';
@@ -284,23 +288,20 @@ function criarTexturaErroImagem(arcano) {
 
   ctx.strokeStyle = '#C49A50';
   ctx.lineWidth = 4;
-  ctx.strokeRect(24, 24, c.width - 48, c.height - 48);
+  ctx.strokeRect(20, 20, c.width - 40, c.height - 40);
 
   ctx.fillStyle = '#E8D9B8';
-  ctx.font = '600 44px Georgia, serif';
+  ctx.font = '600 36px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`ARCANO ${arcano.romano}`, c.width / 2, 260);
+  ctx.fillText(`ARCANO ${obra.romano}`, c.width / 2, 220);
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = '34px Georgia, serif';
-  ctx.fillText(arcano.nome, c.width / 2, 325);
+  ctx.font = '28px Georgia, serif';
+  ctx.fillText(obra.nome, c.width / 2, 275);
 
   ctx.fillStyle = '#C49A50';
-  ctx.font = '22px system-ui, sans-serif';
-  ctx.fillText('Fotografia não encontrada:', c.width / 2, 430);
-  ctx.fillStyle = '#F4EFE6';
-  ctx.font = '20px monospace';
-  ctx.fillText(arcano.imagem, c.width / 2, 470);
+  ctx.font = '18px system-ui, sans-serif';
+  ctx.fillText('Miniatura não encontrada', c.width / 2, 360);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -308,18 +309,18 @@ function criarTexturaErroImagem(arcano) {
 }
 
 /* =====================================================
-   CONSTRUÇÃO DA GALERIA 3D
+   CONSTRUÇÃO DA GALERIA 3D (22 ARCANOS)
    ===================================================== */
 function iniciarCena3D() {
   const cena = new THREE.Scene();
   cena.background = new THREE.Color(0xEDE6D8);
-  cena.fog = new THREE.Fog(0xEDE6D8, 12, 24);
+  cena.fog = new THREE.Fog(0xEDE6D8, 12, 26);
 
   const camera = new THREE.PerspectiveCamera(
     47,
     window.innerWidth / window.innerHeight,
     0.1,
-    40
+    38
   );
 
   const renderer = new THREE.WebGLRenderer({
@@ -339,22 +340,71 @@ function iniciarCena3D() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
-  /* ── Iluminação geral suave ── */
-  const luzAmbiente = new THREE.AmbientLight(0xFFF8EE, 1.15);
-  cena.add(luzAmbiente);
+  /* ── Renderização sob demanda e suspensão com aba oculta ── */
+  let rafId = null;
+  let abaOculta = document.hidden;
+  let totalRenders = 0;
+
+  function solicitarRender() {
+    if (abaOculta || rafId !== null) return;
+    rafId = requestAnimationFrame(executarQuadro);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    abaOculta = document.hidden;
+    if (abaOculta && rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    } else if (!abaOculta) {
+      solicitarRender();
+    }
+  });
+
+  /* ── Iluminação geral suave + pool de 3 refletores dinâmicos ── */
+  cena.add(new THREE.AmbientLight(0xFFF8EE, 1.15));
 
   const luzHemisferica = new THREE.HemisphereLight(0xFFFDF8, 0xC6B59E, 0.75);
   luzHemisferica.position.set(0, 4, 0);
   cena.add(luzHemisferica);
 
-  /* ── Arquitetura da Sala ── */
-  const larguraSala = 7.6;
-  const alturaSala = 4.0;
-  const comprimentoSala = 16.0;
-  const centroZ = -4.0;
+  const poolRefletores = Array.from({ length: 3 }, () => {
+    const spot = new THREE.SpotLight(0xFFF6E8, 9, 8.5, Math.PI / 4.2, 0.75, 1.5);
+    cena.add(spot, spot.target);
+    return spot;
+  });
+
+  function atualizarPoolRefletores(centroIdx) {
+    const indices = [centroIdx, centroIdx + 1, centroIdx - 1];
+    poolRefletores.forEach((spot, k) => {
+      const idx = indices[k];
+      const obra = OBRAS[idx];
+      if (!obra) {
+        spot.intensity = 0;
+        return;
+      }
+      spot.intensity = 9;
+      const dirX = Math.sin(obra.posicao.rotY);
+      const dirZ = Math.cos(obra.posicao.rotY);
+      spot.position.set(
+        obra.posicao.x + dirX * 1.15,
+        3.55,
+        obra.posicao.z + dirZ * 1.15
+      );
+      spot.target.position.set(obra.posicao.x, CONFIG.alturaCentroObra, obra.posicao.z);
+      spot.target.updateMatrixWorld();
+    });
+  }
+
+  /* ── Arquitetura Programática da Sala ── */
+  const zEntrada = CONFIG.zInicialCavalete + CONFIG.margemEntrada;
+  const zUltimaObra = OBRAS[OBRAS.length - 1].posicao.z;
+  const zFundo = zUltimaObra - CONFIG.margemFundo;
+  const comprimentoSala = zEntrada - zFundo;
+  const centroZ = (zEntrada + zFundo) * 0.5;
+  const { larguraSala, alturaSala } = CONFIG;
 
   const pisoMat = new THREE.MeshStandardMaterial({
-    map: criarTexturaPisoMadeira(),
+    map: criarTexturaPisoMadeira(comprimentoSala),
     roughness: 0.78,
     metalness: 0.04
   });
@@ -363,69 +413,79 @@ function iniciarCena3D() {
   piso.position.set(0, 0, centroZ);
   cena.add(piso);
 
-  const tetoMat = new THREE.MeshStandardMaterial({
-    color: 0xF7F3EC,
-    roughness: 0.95
-  });
+  const tetoMat = new THREE.MeshStandardMaterial({ color: 0xF7F3EC, roughness: 0.95 });
   const teto = new THREE.Mesh(new THREE.PlaneGeometry(larguraSala, comprimentoSala), tetoMat);
   teto.rotation.x = Math.PI / 2;
   teto.position.set(0, alturaSala, centroZ);
   cena.add(teto);
 
-  const paredeMat = new THREE.MeshStandardMaterial({
-    color: 0xF4EFE6,
-    roughness: 0.92
-  });
+  const paredeMat = new THREE.MeshStandardMaterial({ color: 0xF4EFE6, roughness: 0.92 });
+  const paredeLateralGeo = new THREE.PlaneGeometry(comprimentoSala, alturaSala);
+  const paredeTopoGeo = new THREE.PlaneGeometry(larguraSala, alturaSala);
 
-  const paredeEsq = new THREE.Mesh(new THREE.PlaneGeometry(comprimentoSala, alturaSala), paredeMat);
+  const paredeEsq = new THREE.Mesh(paredeLateralGeo, paredeMat);
   paredeEsq.rotation.y = Math.PI / 2;
   paredeEsq.position.set(-larguraSala / 2, alturaSala / 2, centroZ);
   cena.add(paredeEsq);
 
-  const paredeDir = new THREE.Mesh(new THREE.PlaneGeometry(comprimentoSala, alturaSala), paredeMat);
+  const paredeDir = new THREE.Mesh(paredeLateralGeo, paredeMat);
   paredeDir.rotation.y = -Math.PI / 2;
   paredeDir.position.set(larguraSala / 2, alturaSala / 2, centroZ);
   cena.add(paredeDir);
 
-  const paredeFundo = new THREE.Mesh(new THREE.PlaneGeometry(larguraSala, alturaSala), paredeMat);
-  paredeFundo.position.set(0, alturaSala / 2, centroZ - comprimentoSala / 2);
+  const paredeFundo = new THREE.Mesh(paredeTopoGeo, paredeMat);
+  paredeFundo.position.set(0, alturaSala / 2, zFundo);
   cena.add(paredeFundo);
 
-  const paredeEntrada = new THREE.Mesh(new THREE.PlaneGeometry(larguraSala, alturaSala), paredeMat);
+  const paredeEntrada = new THREE.Mesh(paredeTopoGeo, paredeMat);
   paredeEntrada.rotation.y = Math.PI;
-  paredeEntrada.position.set(0, alturaSala / 2, centroZ + comprimentoSala / 2);
+  paredeEntrada.position.set(0, alturaSala / 2, zEntrada);
   cena.add(paredeEntrada);
 
   const rodapeMat = new THREE.MeshStandardMaterial({ color: 0xDDD5C5, roughness: 0.85 });
-  const rodapeEsq = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, comprimentoSala), rodapeMat);
+  const rodapeLatGeo = new THREE.BoxGeometry(0.06, 0.14, comprimentoSala);
+
+  const rodapeEsq = new THREE.Mesh(rodapeLatGeo, rodapeMat);
   rodapeEsq.position.set(-larguraSala / 2 + 0.03, 0.07, centroZ);
   cena.add(rodapeEsq);
 
-  const rodapeDir = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, comprimentoSala), rodapeMat);
+  const rodapeDir = new THREE.Mesh(rodapeLatGeo, rodapeMat);
   rodapeDir.position.set(larguraSala / 2 - 0.03, 0.07, centroZ);
   cena.add(rodapeDir);
 
   const rodapeFundo = new THREE.Mesh(new THREE.BoxGeometry(larguraSala, 0.14, 0.06), rodapeMat);
-  rodapeFundo.position.set(0, 0.07, centroZ - comprimentoSala / 2 + 0.03);
+  rodapeFundo.position.set(0, 0.07, zFundo + 0.03);
   cena.add(rodapeFundo);
 
-  /* ── Fio Dourado Dinâmico no Piso ── */
+  /* ── Fio Dourado Dinâmico Programático (22 Paradas) ── */
   const yFio = CONFIG.raioFio + 0.002;
   const pontosChaoFio = [
-    new THREE.Vector3(0.05,  yFio,  3.45),
-    new THREE.Vector3(-0.48, yFio,  1.25),
-    new THREE.Vector3(-1.25, yFio, -1.05),
-    new THREE.Vector3(0.08,  yFio, -3.10),
-    new THREE.Vector3(1.25,  yFio, -5.05),
-    new THREE.Vector3(-0.08, yFio, -7.10),
-    new THREE.Vector3(-1.25, yFio, -9.05)
+    new THREE.Vector3(0.05,  yFio, zEntrada - 0.55),
+    new THREE.Vector3(-0.48, yFio, CONFIG.zInicialCavalete + 2.45)
   ];
+  const alvosChaoParadas = [];
 
+  OBRAS.forEach((obra, i) => {
+    const pontoBase = new THREE.Vector3(obra.lado * 1.25, yFio, obra.posicao.z + 0.15);
+    pontosChaoFio.push(pontoBase);
+    alvosChaoParadas.push(pontoBase);
+
+    if (i < OBRAS.length - 1) {
+      const proxZ = OBRAS[i + 1].posicao.z;
+      const pontoMeio = new THREE.Vector3(
+        -obra.lado * 0.08,
+        yFio,
+        (obra.posicao.z + proxZ) * 0.5 + 0.1
+      );
+      pontosChaoFio.push(pontoMeio);
+    }
+  });
+
+  const segmentosTubularesTotais = (OBRAS.length - 1) * CONFIG.segmentosPorTrechoFio;
   const curvaFio = new THREE.CatmullRomCurve3(pontosChaoFio, false, 'catmullrom', 0.5);
-
   const fioGeo = new THREE.TubeGeometry(
     curvaFio,
-    CONFIG.segmentosTubularesFio,
+    segmentosTubularesTotais,
     CONFIG.raioFio,
     CONFIG.segmentosRadiaisFio,
     false
@@ -445,7 +505,7 @@ function iniciarCena3D() {
   cena.add(fioDourado);
 
   const pontaFio = new THREE.Mesh(
-    new THREE.SphereGeometry(CONFIG.raioFio * 1.15, 14, 14),
+    new THREE.SphereGeometry(CONFIG.raioFio * 1.15, 12, 12),
     fioMat
   );
   cena.add(pontaFio);
@@ -453,29 +513,28 @@ function iniciarCena3D() {
   const luzFio = new THREE.PointLight(0xFFD966, 1.4, 2.2, 2);
   cena.add(luzFio);
 
-  const alvosChaoParadas = [
-    pontosChaoFio[2],
-    pontosChaoFio[4],
-    pontosChaoFio[6]
-  ];
+  // Calcula o parâmetro t exato na curva do fio para cada uma das 22 paradas
+  const amostrasFio = 2400;
+  const tabelaPontosFio = [];
+  for (let i = 0; i <= amostrasFio; i++) {
+    tabelaPontosFio.push(curvaFio.getPointAt(i / amostrasFio));
+  }
 
   const tParadasFio = alvosChaoParadas.map((alvo) => {
-    let melhorT = 0;
+    let melhorIdx = 0;
     let menorDist = Infinity;
-    const amostras = 1200;
-    for (let i = 0; i <= amostras; i++) {
-      const t = i / amostras;
-      const dist = curvaFio.getPointAt(t).distanceToSquared(alvo);
+    for (let i = 0; i <= amostrasFio; i++) {
+      const dist = tabelaPontosFio[i].distanceToSquared(alvo);
       if (dist < menorDist) {
         menorDist = dist;
-        melhorT = t;
+        melhorIdx = i;
       }
     }
-    return melhorT;
+    return melhorIdx / amostrasFio;
   });
 
   function mapearProgressoParaFio(progresso, comAdiantamento = true) {
-    const ultimoIdx = ARCANOS_PROTOTIPO.length - 1;
+    const ultimoIdx = OBRAS.length - 1;
     const p = THREE.MathUtils.clamp(progresso, 0, ultimoIdx);
     const seg = Math.min(Math.floor(p), ultimoIdx - 1);
     const u = p - seg;
@@ -485,21 +544,24 @@ function iniciarCena3D() {
 
   function atualizarGeometriaFio(tVisivel, tPosicaoAtual) {
     const tLimitado = THREE.MathUtils.clamp(tVisivel, 0.002, 1);
-    const segsVisiveis = Math.max(
-      1,
-      Math.round(tLimitado * CONFIG.segmentosTubularesFio)
-    );
+    const segsVisiveis = Math.max(1, Math.round(tLimitado * segmentosTubularesTotais));
     const indicesPorSegmento = CONFIG.segmentosRadiaisFio * 6;
     fioGeo.setDrawRange(0, segsVisiveis * indicesPorSegmento);
 
-    const pontoPonta = curvaFio.getPointAt(tLimitado);
-    pontaFio.position.copy(pontoPonta);
+    pontaFio.position.copy(curvaFio.getPointAt(tLimitado));
 
     const pontoLuz = curvaFio.getPointAt(THREE.MathUtils.clamp(tPosicaoAtual, 0.002, 1));
     luzFio.position.set(pontoLuz.x, 0.28, pontoLuz.z);
   }
 
-  /* ── Materiais dos Cavaletes e Molduras ── */
+  /* ── Geometrias e Materiais Compartilhados dos 22 Cavaletes ── */
+  const geoPernaFrontal = new THREE.BoxGeometry(0.055, 2.08, 0.055);
+  const geoPernaTras    = new THREE.BoxGeometry(0.055, 2.15, 0.055);
+  const geoHasteCentral = new THREE.BoxGeometry(0.05, 1.85, 0.045);
+  const geoPrateleira   = new THREE.BoxGeometry(0.98, 0.045, 0.14);
+  const geoCaixaUnit    = new THREE.BoxGeometry(1, 1, 1);
+  const geoPlanoUnit    = new THREE.PlaneGeometry(1, 1);
+
   const madeiraMat = new THREE.MeshStandardMaterial({
     color: 0x6E4E34,
     roughness: 0.76,
@@ -512,38 +574,38 @@ function iniciarCena3D() {
     metalness: 0.04
   });
 
-  const carregadorTextura = new THREE.TextureLoader();
+  const placeholderFotoMat = new THREE.MeshBasicMaterial({
+    color: 0xE8D9B8,
+    toneMapped: false
+  });
 
-  /* ── Construção dos 3 Cavaletes e Molduras ── */
-  function construirCavaleteComObra(arcano, indice) {
+  /* ── Construção dos 22 Cavaletes (com geometria compartilhada) ── */
+  const slotsObras = OBRAS.map((obra, indice) => {
     const grupo = new THREE.Group();
-    grupo.position.set(arcano.posicao.x, 0, arcano.posicao.z);
-    grupo.rotation.y = arcano.posicao.rotY;
+    grupo.position.set(obra.posicao.x, 0, obra.posicao.z);
+    grupo.rotation.y = obra.posicao.rotY;
 
-    const pernaGeo = new THREE.BoxGeometry(0.055, 2.08, 0.055);
-    const pernaEsq = new THREE.Mesh(pernaGeo, madeiraMat);
+    const pernaEsq = new THREE.Mesh(geoPernaFrontal, madeiraMat);
     pernaEsq.position.set(-0.34, 1.02, 0.02);
-    pernaEsq.rotation.z = -0.07;
-    pernaEsq.rotation.x = -0.06;
+    pernaEsq.rotation.set(-0.06, 0, -0.07);
     grupo.add(pernaEsq);
 
-    const pernaDir = new THREE.Mesh(pernaGeo, madeiraMat);
+    const pernaDir = new THREE.Mesh(geoPernaFrontal, madeiraMat);
     pernaDir.position.set(0.34, 1.02, 0.02);
-    pernaDir.rotation.z = 0.07;
-    pernaDir.rotation.x = -0.06;
+    pernaDir.rotation.set(-0.06, 0, 0.07);
     grupo.add(pernaDir);
 
-    const pernaTras = new THREE.Mesh(new THREE.BoxGeometry(0.055, 2.15, 0.055), madeiraMat);
+    const pernaTras = new THREE.Mesh(geoPernaTras, madeiraMat);
     pernaTras.position.set(0, 0.98, -0.42);
     pernaTras.rotation.x = 0.34;
     grupo.add(pernaTras);
 
-    const hasteCentral = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.85, 0.045), madeiraMat);
+    const hasteCentral = new THREE.Mesh(geoHasteCentral, madeiraMat);
     hasteCentral.position.set(0, 1.12, -0.02);
     hasteCentral.rotation.x = -0.06;
     grupo.add(hasteCentral);
 
-    const prateleira = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.045, 0.14), madeiraMat);
+    const prateleira = new THREE.Mesh(geoPrateleira, madeiraMat);
     prateleira.position.set(0, 0.86, 0.09);
     grupo.add(prateleira);
 
@@ -551,105 +613,173 @@ function iniciarCena3D() {
     grupoQuadro.position.set(0, CONFIG.alturaCentroObra, 0.07);
     grupo.add(grupoQuadro);
 
-    function montarQuadro(textura, proporcaoLarguraAltura) {
-      while (grupoQuadro.children.length > 0) {
-        const filho = grupoQuadro.children[0];
-        if (filho.geometry) filho.geometry.dispose();
-        grupoQuadro.remove(filho);
-      }
+    const fundo     = new THREE.Mesh(geoCaixaUnit, molduraPretaMat);
+    const barraTopo = new THREE.Mesh(geoCaixaUnit, molduraPretaMat);
+    const barraBase = new THREE.Mesh(geoCaixaUnit, molduraPretaMat);
+    const barraEsq  = new THREE.Mesh(geoCaixaUnit, molduraPretaMat);
+    const barraDir  = new THREE.Mesh(geoCaixaUnit, molduraPretaMat);
 
+    const fotoMesh = new THREE.Mesh(geoPlanoUnit, placeholderFotoMat);
+    fotoMesh.position.z = 0.004;
+    fotoMesh.userData.indiceArcano = indice;
+
+    grupoQuadro.add(fundo, barraTopo, barraBase, barraEsq, barraDir, fotoMesh);
+    cena.add(grupo);
+    obrasInterativas[indice] = fotoMesh;
+
+    function aplicarProporcao(proporcao) {
       let largura = CONFIG.larguraMaxObra;
-      let altura = largura / proporcaoLarguraAltura;
+      let altura = largura / proporcao;
       if (altura > CONFIG.alturaMaxObra) {
         altura = CONFIG.alturaMaxObra;
-        largura = altura * proporcaoLarguraAltura;
+        largura = altura * proporcao;
       }
 
-      const espessuraMoldura = largura * CONFIG.fatorEspessuraMoldura;
-      const profundidade = CONFIG.profundidadeMoldura;
-      prateleira.position.y = CONFIG.alturaCentroObra - (altura / 2) - espessuraMoldura - 0.025;
+      const esp = largura * CONFIG.fatorEspessuraMoldura;
+      const prof = CONFIG.profundidadeMoldura;
+      prateleira.position.y = CONFIG.alturaCentroObra - (altura / 2) - esp - 0.025;
 
-      const fundoGeo = new THREE.BoxGeometry(
-        largura + espessuraMoldura * 2,
-        altura + espessuraMoldura * 2,
-        0.016
-      );
-      const fundo = new THREE.Mesh(fundoGeo, molduraPretaMat);
-      fundo.position.z = -profundidade / 2;
-      grupoQuadro.add(fundo);
+      fundo.scale.set(largura + esp * 2, altura + esp * 2, 0.016);
+      fundo.position.z = -prof / 2;
 
-      const barraHorizGeo = new THREE.BoxGeometry(
-        largura + espessuraMoldura * 2,
-        espessuraMoldura,
-        profundidade
-      );
-      const barraVertGeo = new THREE.BoxGeometry(
-        espessuraMoldura,
-        altura,
-        profundidade
-      );
+      barraTopo.scale.set(largura + esp * 2, esp, prof);
+      barraTopo.position.set(0, altura / 2 + esp / 2, 0);
 
-      const topo = new THREE.Mesh(barraHorizGeo, molduraPretaMat);
-      topo.position.y = altura / 2 + espessuraMoldura / 2;
-      grupoQuadro.add(topo);
+      barraBase.scale.set(largura + esp * 2, esp, prof);
+      barraBase.position.set(0, -(altura / 2 + esp / 2), 0);
 
-      const base = new THREE.Mesh(barraHorizGeo, molduraPretaMat);
-      base.position.y = -(altura / 2 + espessuraMoldura / 2);
-      grupoQuadro.add(base);
+      barraEsq.scale.set(esp, altura, prof);
+      barraEsq.position.set(-(largura / 2 + esp / 2), 0, 0);
 
-      const esq = new THREE.Mesh(barraVertGeo, molduraPretaMat);
-      esq.position.x = -(largura / 2 + espessuraMoldura / 2);
-      grupoQuadro.add(esq);
+      barraDir.scale.set(esp, altura, prof);
+      barraDir.position.set(largura / 2 + esp / 2, 0, 0);
 
-      const dir = new THREE.Mesh(barraVertGeo, molduraPretaMat);
-      dir.position.x = largura / 2 + espessuraMoldura / 2;
-      grupoQuadro.add(dir);
-
-      const fotoGeo = new THREE.PlaneGeometry(largura, altura);
-      const fotoMat = new THREE.MeshBasicMaterial({
-        map: textura,
-        toneMapped: false
-      });
-      const fotoMesh = new THREE.Mesh(fotoGeo, fotoMat);
-      fotoMesh.position.z = 0.004;
-      fotoMesh.userData.indiceArcano = indice;
-      grupoQuadro.add(fotoMesh);
-
-      obrasInterativas[indice] = fotoMesh;
+      fotoMesh.scale.set(largura, altura, 1);
     }
 
+    // Proporção inicial padrão (3:4) antes da miniatura carregar
+    aplicarProporcao(3 / 4);
+
+    return {
+      indice,
+      obra,
+      fotoMesh,
+      aplicarProporcao,
+      estado: 'vazio', // 'vazio' | 'carregando' | 'carregado' | 'erro'
+      textura: null,
+      material: null
+    };
+  });
+
+  /* ── Gerenciador de Carregamento Progressivo e Descarte (VRAM) ── */
+  const carregadorTextura = new THREE.TextureLoader();
+  let carregamentosAtivos = 0;
+  let centroJanelaAtual = 0;
+  const temposCarregamentoMs = [];
+
+  function liberarSlot(slot) {
+    if (slot.estado !== 'carregado' && slot.estado !== 'erro') return;
+    slot.fotoMesh.material = placeholderFotoMat;
+    if (slot.material) {
+      slot.material.dispose();
+      slot.material = null;
+    }
+    if (slot.textura) {
+      slot.textura.dispose();
+      slot.textura = null;
+    }
+    slot.estado = 'vazio';
+  }
+
+  function processarFilaCarregamento() {
+    // 1. Descarta texturas distantes para manter a memória gráfica sob controle
+    slotsObras.forEach((slot) => {
+      if (Math.abs(slot.indice - centroJanelaAtual) > CONFIG.raioDescarte) {
+        liberarSlot(slot);
+      }
+    });
+
+    if (carregamentosAtivos >= CONFIG.maxCarregamentosSimultaneos) return;
+
+    // 2. Ordena candidatos por proximidade: atual, próxima, anterior, e assim por diante
+    const candidatos = [];
+    for (let d = 0; d <= CONFIG.raioCarregamento; d++) {
+      const pares = d === 0 ? [centroJanelaAtual] : [centroJanelaAtual + d, centroJanelaAtual - d];
+      for (const idx of pares) {
+        const slot = slotsObras[idx];
+        if (slot && slot.estado === 'vazio') {
+          candidatos.push(slot);
+        }
+      }
+    }
+
+    for (const slot of candidatos) {
+      if (carregamentosAtivos >= CONFIG.maxCarregamentosSimultaneos) break;
+      carregarSlot(slot);
+    }
+  }
+
+  function carregarSlot(slot) {
+    slot.estado = 'carregando';
+    carregamentosAtivos++;
+    const inicioMs = performance.now();
+
     carregadorTextura.load(
-      arcano.imagem,
+      slot.obra.urlMini,
       (textura) => {
+        carregamentosAtivos--;
+        temposCarregamentoMs.push(performance.now() - inicioMs);
+
+        // Se o visitante já se afastou muito enquanto carregava, descarta imediatamente
+        if (Math.abs(slot.indice - centroJanelaAtual) > CONFIG.raioDescarte) {
+          textura.dispose();
+          slot.estado = 'vazio';
+          processarFilaCarregamento();
+          return;
+        }
+
         textura.colorSpace = THREE.SRGBColorSpace;
         textura.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
         const img = textura.image;
         const proporcao = img && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 3 / 4;
-        montarQuadro(textura, proporcao);
+        slot.aplicarProporcao(proporcao);
+
+        const mat = new THREE.MeshBasicMaterial({
+          map: textura,
+          toneMapped: false
+        });
+        slot.textura = textura;
+        slot.material = mat;
+        slot.fotoMesh.material = mat;
+        slot.estado = 'carregado';
+
+        solicitarRender();
+        processarFilaCarregamento();
       },
       undefined,
       () => {
-        registrarAviso(`Imagem não encontrada: ${arcano.imagem} (${arcano.nome}).`);
-        montarQuadro(criarTexturaErroImagem(arcano), 3 / 4);
+        carregamentosAtivos--;
+        registrarAviso(`Miniatura não encontrada: ${slot.obra.urlMini} (${slot.obra.nome}).`);
+        const texErro = criarTexturaErroImagem(slot.obra);
+        const matErro = new THREE.MeshBasicMaterial({ map: texErro, toneMapped: false });
+        slot.textura = texErro;
+        slot.material = matErro;
+        slot.fotoMesh.material = matErro;
+        slot.estado = 'erro';
+
+        solicitarRender();
+        processarFilaCarregamento();
       }
     );
-
-    const spot = new THREE.SpotLight(0xFFF6E8, 9, 7.5, Math.PI / 4.2, 0.75, 1.5);
-    const dirFrontal = new THREE.Vector3(Math.sin(arcano.posicao.rotY), 0, Math.cos(arcano.posicao.rotY));
-    spot.position.set(
-      arcano.posicao.x + dirFrontal.x * 1.15,
-      3.55,
-      arcano.posicao.z + dirFrontal.z * 1.15
-    );
-    spot.target.position.set(arcano.posicao.x, CONFIG.alturaCentroObra, arcano.posicao.z);
-    cena.add(spot, spot.target);
-
-    cena.add(grupo);
   }
 
-  ARCANOS_PROTOTIPO.forEach((arcano, i) => construirCavaleteComObra(arcano, i));
+  function atualizarJanelaTexturas(indiceCentro) {
+    centroJanelaAtual = THREE.MathUtils.clamp(Math.round(indiceCentro), 0, OBRAS.length - 1);
+    atualizarPoolRefletores(centroJanelaAtual);
+    processarFilaCarregamento();
+  }
 
-  /* ── Cálculo dos Pontos de Observação (mantendo a obra na área livre) ── */
+  /* ── Cálculo dos Pontos de Observação (compensando o HUD) ── */
   function recalcularPontosEPercursos() {
     if (topbar) {
       document.documentElement.style.setProperty('--topbar-h', `${topbar.getBoundingClientRect().height}px`);
@@ -672,7 +802,6 @@ function iniciarCena3D() {
         offsetLateral = meiaLarguraVisivel * fracaoOcupada * 0.92;
       }
     } else {
-      // Calcula o centro exato da área livre entre a barra de título do Arcano (topo) e os botões (base)
       const topoLivre = hudInfo ? hudInfo.getBoundingClientRect().bottom : 112;
       const baseLivre = hudControles ? hudControles.getBoundingClientRect().top : window.innerHeight - 72;
       const centroLivreY = (topoLivre + baseLivre) * 0.5;
@@ -680,20 +809,20 @@ function iniciarCena3D() {
       offsetVertical = meiaAlturaVisivel * 2 * deslocamentoNormY;
     }
 
-    ARCANOS_PROTOTIPO.forEach((arcano, i) => {
+    OBRAS.forEach((obra, i) => {
       const dirFrontal = new THREE.Vector3(
-        Math.sin(arcano.posicao.rotY),
+        Math.sin(obra.posicao.rotY),
         0,
-        Math.cos(arcano.posicao.rotY)
+        Math.cos(obra.posicao.rotY)
       ).normalize();
 
       const dirOlhar = dirFrontal.clone().negate();
       const vetorDireita = new THREE.Vector3().crossVectors(dirOlhar, EIXO_Y).normalize();
 
       const centroObra = new THREE.Vector3(
-        arcano.posicao.x + dirFrontal.x * 0.07,
+        obra.posicao.x + dirFrontal.x * 0.07,
         CONFIG.alturaCentroObra,
-        arcano.posicao.z + dirFrontal.z * 0.07
+        obra.posicao.z + dirFrontal.z * 0.07
       );
 
       const deslocamento = vetorDireita.multiplyScalar(offsetLateral);
@@ -705,13 +834,14 @@ function iniciarCena3D() {
       pontosObservacao[i] = { posicao, alvo };
     });
 
+    // Curvas Bézier pelo eixo central do corredor (impede atravessar cavaletes ou paredes)
     curvasCameraTrechos.length = 0;
-    for (let i = 0; i < ARCANOS_PROTOTIPO.length - 1; i++) {
+    for (let i = 0; i < OBRAS.length - 1; i++) {
       const pInicio = pontosObservacao[i].posicao;
       const pFim = pontosObservacao[i + 1].posicao;
 
       const pontoControle = new THREE.Vector3(
-        (pInicio.x + pFim.x) * 0.5,
+        0,
         (pInicio.y + pFim.y) * 0.5,
         (pInicio.z + pFim.z) * 0.5
       );
@@ -726,7 +856,7 @@ function iniciarCena3D() {
   const tempGuiaFio = new THREE.Vector3();
 
   function aplicarEstadoPercurso(progresso) {
-    const ultimoIdx = ARCANOS_PROTOTIPO.length - 1;
+    const ultimoIdx = OBRAS.length - 1;
     const p = THREE.MathUtils.clamp(progresso, 0, ultimoIdx);
     const seg = Math.min(Math.floor(p), ultimoIdx - 1);
     const u = p - seg;
@@ -749,21 +879,23 @@ function iniciarCena3D() {
       tempAlvo.lerp(tempGuiaFio, pesoGuia);
     }
     camera.lookAt(tempAlvo);
+
+    atualizarJanelaTexturas(p);
   }
 
   /* ── HUD e Navegação Guiada ── */
   function atualizarHUD() {
-    const arcano = ARCANOS_PROTOTIPO[indiceAtual];
-    hudNumero.textContent = `ARCANO ${arcano.romano}`;
-    hudNome.textContent = arcano.nome;
-    hudProgresso.textContent = `Obra ${indiceAtual + 1} de ${ARCANOS_PROTOTIPO.length}`;
+    const obra = OBRAS[indiceAtual];
+    hudNumero.textContent = `ARCANO ${obra.romano}`;
+    hudNome.textContent = obra.nome;
+    hudProgresso.textContent = `Obra ${indiceAtual + 1} de ${OBRAS.length}`;
 
     btnAnterior.disabled = indiceAtual === 0;
-    btnProximo.disabled = indiceAtual === ARCANOS_PROTOTIPO.length - 1;
+    btnProximo.disabled = indiceAtual === OBRAS.length - 1;
   }
 
   function iniciarDeslocamentoPara(novoIndice, instantaneo = false) {
-    const alvoClamped = THREE.MathUtils.clamp(novoIndice, 0, ARCANOS_PROTOTIPO.length - 1);
+    const alvoClamped = THREE.MathUtils.clamp(novoIndice, 0, OBRAS.length - 1);
     indiceAtual = alvoClamped;
     atualizarHUD();
 
@@ -771,6 +903,7 @@ function iniciarCena3D() {
       interromperPercurso();
       estadoPercurso.progressoAtual = alvoClamped;
       aplicarEstadoPercurso(alvoClamped);
+      solicitarRender();
       return;
     }
 
@@ -778,6 +911,7 @@ function iniciarCena3D() {
     if (distanciaProgresso < 0.001) {
       interromperPercurso();
       aplicarEstadoPercurso(alvoClamped);
+      solicitarRender();
       return;
     }
 
@@ -786,18 +920,22 @@ function iniciarCena3D() {
     estadoPercurso.duracaoMs = Math.max(600, distanciaProgresso * CONFIG.duracaoTrecho * 1000);
     estadoPercurso.inicioTempo = performance.now();
     estadoPercurso.ativo = true;
+    solicitarRender();
   }
 
+  // Inicializa diante de 0 — O Louco
   recalcularPontosEPercursos();
   iniciarDeslocamentoPara(0, true);
 
   /* ── Eventos de Controle ── */
   btnAnterior.addEventListener('click', () => {
-    if (indiceAtual > 0) iniciarDeslocamentoPara(indiceAtual - 1);
+    const base = estadoPercurso.ativo ? Math.ceil(estadoPercurso.progressoAtual) : indiceAtual;
+    if (base > 0) iniciarDeslocamentoPara(base - 1);
   });
 
   btnProximo.addEventListener('click', () => {
-    if (indiceAtual < ARCANOS_PROTOTIPO.length - 1) iniciarDeslocamentoPara(indiceAtual + 1);
+    const base = estadoPercurso.ativo ? Math.floor(estadoPercurso.progressoAtual) : indiceAtual;
+    if (base < OBRAS.length - 1) iniciarDeslocamentoPara(base + 1);
   });
 
   btnVerObra.addEventListener('click', () => abrirModal(indiceAtual));
@@ -807,7 +945,7 @@ function iniciarCena3D() {
     if (e.key === 'ArrowLeft' && indiceAtual > 0) {
       e.preventDefault();
       iniciarDeslocamentoPara(indiceAtual - 1);
-    } else if (e.key === 'ArrowRight' && indiceAtual < ARCANOS_PROTOTIPO.length - 1) {
+    } else if (e.key === 'ArrowRight' && indiceAtual < OBRAS.length - 1) {
       e.preventDefault();
       iniciarDeslocamentoPara(indiceAtual + 1);
     } else if (e.key === 'Enter' && document.activeElement === document.body) {
@@ -826,8 +964,7 @@ function iniciarCena3D() {
     ponteiro.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(ponteiro, camera);
-    const alvosValidos = obrasInterativas.filter(Boolean);
-    const intersecoes = raycaster.intersectObjects(alvosValidos, false);
+    const intersecoes = raycaster.intersectObjects(obrasInterativas, false);
     return intersecoes.length > 0 ? intersecoes[0].object : null;
   }
 
@@ -864,15 +1001,53 @@ function iniciarCena3D() {
     aplicarResolucao();
     recalcularPontosEPercursos();
     aplicarEstadoPercurso(estadoPercurso.progressoAtual);
+    solicitarRender();
   });
 
-  /* ── Loop de Renderização ── */
+  /* ── Instrumentação de Diagnóstico (?debug=1 ou window.salaDiagnostico()) ── */
+  let painelDebug = null;
+  if (modoDebug) {
+    painelDebug = document.createElement('pre');
+    painelDebug.style.cssText =
+      'position:fixed;bottom:1rem;left:1rem;z-index:30;padding:.5rem .75rem;' +
+      'background:rgba(28,24,19,.84);color:#F4EFE6;font:11px/1.4 monospace;' +
+      'border:1px solid #A07830;border-radius:3px;pointer-events:none;';
+    document.body.appendChild(painelDebug);
+  }
+
+  function obterDiagnostico() {
+    const mediaMs = temposCarregamentoMs.length
+      ? Math.round(temposCarregamentoMs.reduce((a, b) => a + b, 0) / temposCarregamentoMs.length)
+      : 0;
+    return {
+      obraAtual: `${OBRAS[indiceAtual].romano} — ${OBRAS[indiceAtual].nome} (${indiceAtual + 1}/${OBRAS.length})`,
+      texturasEmMemoria: renderer.info.memory.textures,
+      geometriasEmMemoria: renderer.info.memory.geometries,
+      drawCallsPorQuadro: renderer.info.render.calls,
+      totalRendersExecutados: totalRenders,
+      slotsCarregados: slotsObras.filter((s) => s.estado === 'carregado').length,
+      tempoMedioCargaMs: mediaMs
+    };
+  }
+
+  window.salaDiagnostico = obterDiagnostico;
+
+  function atualizarPainelDebug() {
+    if (!painelDebug) return;
+    const d = obterDiagnostico();
+    painelDebug.textContent =
+      `Texturas VRAM: ${d.texturasEmMemoria} (slots: ${d.slotsCarregados}/22)\n` +
+      `Geometrias: ${d.geometriasEmMemoria} | Draw calls: ${d.drawCallsPorQuadro}\n` +
+      `Renders: ${d.totalRendersExecutados} | Carga média: ${d.tempoMedioCargaMs} ms`;
+  }
+
+  /* ── Loop de Renderização Sob Demanda ── */
   function easeInOutSine(t) {
     return -(Math.cos(Math.PI * t) - 1) / 2;
   }
 
-  function animar(agora) {
-    requestAnimationFrame(animar);
+  function executarQuadro(agora) {
+    rafId = null;
 
     if (estadoPercurso.ativo) {
       const decorrido = (agora - estadoPercurso.inicioTempo) / estadoPercurso.duracaoMs;
@@ -893,9 +1068,15 @@ function iniciarCena3D() {
     }
 
     renderer.render(cena, camera);
+    totalRenders++;
+    atualizarPainelDebug();
+
+    if (estadoPercurso.ativo && !abaOculta) {
+      rafId = requestAnimationFrame(executarQuadro);
+    }
   }
 
-  requestAnimationFrame(animar);
+  solicitarRender();
 }
 
 /* =====================================================
