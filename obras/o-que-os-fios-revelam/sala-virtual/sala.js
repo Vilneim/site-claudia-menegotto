@@ -37,9 +37,49 @@ const CONFIG = {
   raioFio: 0.024,
 
   // Otimização de memória e carregamento progressivo
-  raioCarregamento: 3,       // Carrega obras a até 3 posições da câmera
-  raioDescarte: 5,           // Libera texturas (dispose) além de 5 posições
+  raioCarregamento: 3,
+  raioDescarte: 5,
   maxCarregamentosSimultaneos: 2
+};
+
+/* =====================================================
+   ILUMINAÇÃO DE GALERIA (ajuste livre das intensidades)
+   ===================================================== */
+const ILUMINACAO = {
+  corFundoNeblina: 0xD2C8B8,
+  ambienteCor: 0xFFF3E0,
+  ambienteIntensidade: 0.45,
+  hemisfericaCeu: 0xFFF7EA,
+  hemisfericaChao: 0x8F7C66,
+  hemisfericaIntensidade: 0.32,
+
+  // Pool de 3 refletores (obra atual em destaque + vizinhas discretas)
+  refletorCor: 0xFFE9C4,
+  refletorAtualIntensidade: 16.0,
+  refletorVizinhoIntensidade: 5.5,
+  refletorDistancia: 9.0,
+  refletorAngulo: Math.PI / 5.2,
+  refletorPenumbra: 0.82,
+  refletorDecaimento: 1.45,
+
+  // Luz dourada sutil que acompanha o fio no piso
+  luzFioCor: 0xFFD966,
+  luzFioIntensidade: 1.8,
+  luzFioDistancia: 2.6
+};
+
+/* =====================================================
+   CONFIGURAÇÕES DE ÁUDIO
+   ===================================================== */
+const AUDIO_CONFIG = {
+  chaveSessao: 'sala-virtual-som',
+  urlClique: './audio/click-351398.mp3',
+  urlMovimento: './audio/movimento-suave.mp3',
+  volumeClique: 0.28,
+  volumeMovimento: 0.22,
+  intervaloMinCliqueMs: 90,
+  fadeInMovimentoMs: 260,
+  fadeOutMovimentoMs: 520
 };
 
 /* =====================================================
@@ -47,6 +87,7 @@ const CONFIG = {
    ===================================================== */
 const canvas         = document.getElementById('sala-canvas');
 const topbar         = document.querySelector('.sala-topbar');
+const btnSom         = document.getElementById('btn-som');
 const hud            = document.getElementById('sala-hud');
 const hudInfo        = document.querySelector('.hud-info');
 const hudControles   = document.querySelector('.hud-controles');
@@ -56,6 +97,7 @@ const hudProgresso   = document.getElementById('hud-progresso');
 const btnAnterior    = document.getElementById('btn-anterior');
 const btnProximo     = document.getElementById('btn-proximo');
 const btnVerObra     = document.getElementById('btn-ver-obra');
+const btnInicio      = document.getElementById('btn-inicio');
 const avisosEl       = document.getElementById('sala-avisos');
 const fallbackEl     = document.getElementById('sala-fallback');
 const fallbackGrid   = document.getElementById('fallback-grid');
@@ -74,10 +116,181 @@ const modoDebug = new URLSearchParams(window.location.search).get('debug') === '
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 
 /* =====================================================
+   GERENCIADOR DE ÁUDIO (inicia desativado; seguro se faltar arquivo)
+   ===================================================== */
+function criarGerenciadorAudio() {
+  let ativo = false;
+  let ultimoCliqueMs = 0;
+  let fadeRafId = null;
+  let movimentoDisponivel = true;
+  let cliqueDisponivel = true;
+
+  const audioClique = new Audio(AUDIO_CONFIG.urlClique);
+  audioClique.preload = 'none';
+  audioClique.volume = AUDIO_CONFIG.volumeClique;
+  audioClique.addEventListener('error', () => {
+    cliqueDisponivel = false;
+  });
+
+  const audioMovimento = new Audio(AUDIO_CONFIG.urlMovimento);
+  audioMovimento.preload = 'none';
+  audioMovimento.volume = 0;
+  audioMovimento.addEventListener('error', () => {
+    movimentoDisponivel = false;
+  });
+
+  function cancelarFade() {
+    if (fadeRafId !== null) {
+      cancelAnimationFrame(fadeRafId);
+      fadeRafId = null;
+    }
+  }
+
+  function animarVolume(audio, destino, duracaoMs, aoConcluir) {
+    cancelarFade();
+    const volInicio = audio.volume;
+    const inicio = performance.now();
+
+    function passo(agora) {
+      const t = duracaoMs > 0 ? Math.min((agora - inicio) / duracaoMs, 1) : 1;
+      audio.volume = THREE.MathUtils.clamp(
+        volInicio + (destino - volInicio) * t,
+        0,
+        1
+      );
+
+      if (t < 1) {
+        fadeRafId = requestAnimationFrame(passo);
+      } else {
+        fadeRafId = null;
+        if (aoConcluir) aoConcluir();
+      }
+    }
+
+    fadeRafId = requestAnimationFrame(passo);
+  }
+
+  function atualizarBotaoSom() {
+    if (!btnSom) return;
+    btnSom.textContent = ativo ? 'Silenciar' : 'Ativar som';
+    btnSom.setAttribute('aria-pressed', String(ativo));
+  }
+
+  function definirAtivo(novoEstado, salvarSessao = true) {
+    ativo = Boolean(novoEstado);
+    atualizarBotaoSom();
+
+    if (salvarSessao) {
+      try {
+        sessionStorage.setItem(AUDIO_CONFIG.chaveSessao, ativo ? 'ativo' : 'silenciado');
+      } catch {
+        // Ignora caso o navegador bloqueie sessionStorage
+      }
+    }
+
+    if (!ativo) {
+      pararMovimento(true);
+    } else {
+      // Prepara os arquivos após gesto voluntário do visitante
+      if (cliqueDisponivel) audioClique.load();
+      if (movimentoDisponivel) audioMovimento.load();
+    }
+  }
+
+  function tocarClique() {
+    if (!ativo || !cliqueDisponivel) return;
+    const agora = performance.now();
+    if (agora - ultimoCliqueMs < AUDIO_CONFIG.intervaloMinCliqueMs) return;
+    ultimoCliqueMs = agora;
+
+    try {
+      audioClique.pause();
+      audioClique.currentTime = 0;
+      audioClique.volume = AUDIO_CONFIG.volumeClique;
+      const p = audioClique.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    } catch {
+      // Ignora restrições de reprodução
+    }
+  }
+
+  function iniciarMovimento() {
+    if (!ativo || !movimentoDisponivel) return;
+    cancelarFade();
+
+    try {
+      audioMovimento.pause();
+      audioMovimento.currentTime = 0;
+      audioMovimento.volume = 0;
+      const p = audioMovimento.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          if (ativo) {
+            animarVolume(
+              audioMovimento,
+              AUDIO_CONFIG.volumeMovimento,
+              AUDIO_CONFIG.fadeInMovimentoMs
+            );
+          }
+        }).catch(() => {});
+      }
+    } catch {
+      // Ignora se arquivo ausente ou bloqueado
+    }
+  }
+
+  function pararMovimento(imediato = false) {
+    if (!movimentoDisponivel) return;
+    if (audioMovimento.paused && audioMovimento.volume === 0) {
+      cancelarFade();
+      return;
+    }
+
+    if (imediato) {
+      cancelarFade();
+      audioMovimento.pause();
+      audioMovimento.currentTime = 0;
+      audioMovimento.volume = 0;
+      return;
+    }
+
+    animarVolume(audioMovimento, 0, AUDIO_CONFIG.fadeOutMovimentoMs, () => {
+      audioMovimento.pause();
+      audioMovimento.currentTime = 0;
+    });
+  }
+
+  // Inicia desativado; preserva preferência da sessão apenas se já ativada antes
+  try {
+    if (sessionStorage.getItem(AUDIO_CONFIG.chaveSessao) === 'ativo') {
+      ativo = true;
+    }
+  } catch {
+    ativo = false;
+  }
+  atualizarBotaoSom();
+
+  if (btnSom) {
+    btnSom.addEventListener('click', () => {
+      definirAtivo(!ativo, true);
+      if (ativo) tocarClique();
+    });
+  }
+
+  return {
+    tocarClique,
+    iniciarMovimento,
+    pararMovimento
+  };
+}
+
+const gerenciadorAudio = criarGerenciadorAudio();
+
+/* =====================================================
    POSIÇÕES PROGRAMÁTICAS DOS 22 ARCANOS
    ===================================================== */
 const OBRAS = ARCANOS.map((arcano, i) => {
-  const lado = i % 2 === 0 ? -1 : 1; // Alterna esquerda (-1) e direita (+1)
+  const lado = i % 2 === 0 ? -1 : 1;
   return {
     ...arcano,
     indice: i,
@@ -139,6 +352,7 @@ function registrarAviso(mensagem) {
 function ativarFallbackSemWebGL() {
   canvas.style.display = 'none';
   hud.hidden = true;
+  if (btnSom) btnSom.hidden = true;
   fallbackEl.hidden = false;
 
   OBRAS.forEach((obra, i) => {
@@ -171,12 +385,13 @@ function ativarFallbackSemWebGL() {
 /* =====================================================
    MODAL ACESSÍVEL (Carrega foto grande somente aqui)
    ===================================================== */
-function interromperPercurso() {
+function interromperPercurso(somImediato = false) {
   estadoPercurso.ativo = false;
+  gerenciadorAudio.pararMovimento(somImediato);
 }
 
 function abrirModal(indice) {
-  interromperPercurso();
+  interromperPercurso(false);
 
   const obra = OBRAS[indice];
   if (!obra) return;
@@ -209,7 +424,6 @@ function fecharModal() {
   if (modal.open) {
     modal.close();
   }
-  // Permanece parado onde estava até nova ação do visitante
 }
 
 modalFechar.addEventListener('click', fecharModal);
@@ -313,8 +527,8 @@ function criarTexturaErroImagem(obra) {
    ===================================================== */
 function iniciarCena3D() {
   const cena = new THREE.Scene();
-  cena.background = new THREE.Color(0xEDE6D8);
-  cena.fog = new THREE.Fog(0xEDE6D8, 12, 26);
+  cena.background = new THREE.Color(ILUMINACAO.corFundoNeblina);
+  cena.fog = new THREE.Fog(ILUMINACAO.corFundoNeblina, 11, 25);
 
   const camera = new THREE.PerspectiveCamera(
     47,
@@ -352,45 +566,64 @@ function iniciarCena3D() {
 
   document.addEventListener('visibilitychange', () => {
     abaOculta = document.hidden;
-    if (abaOculta && rafId !== null) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    } else if (!abaOculta) {
+    if (abaOculta) {
+      gerenciadorAudio.pararMovimento(true);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    } else {
       solicitarRender();
     }
   });
 
-  /* ── Iluminação geral suave + pool de 3 refletores dinâmicos ── */
-  cena.add(new THREE.AmbientLight(0xFFF8EE, 1.15));
+  /* ── Iluminação intimista de galeria + pool de 3 refletores focais ── */
+  cena.add(new THREE.AmbientLight(ILUMINACAO.ambienteCor, ILUMINACAO.ambienteIntensidade));
 
-  const luzHemisferica = new THREE.HemisphereLight(0xFFFDF8, 0xC6B59E, 0.75);
+  const luzHemisferica = new THREE.HemisphereLight(
+    ILUMINACAO.hemisfericaCeu,
+    ILUMINACAO.hemisfericaChao,
+    ILUMINACAO.hemisfericaIntensidade
+  );
   luzHemisferica.position.set(0, 4, 0);
   cena.add(luzHemisferica);
 
   const poolRefletores = Array.from({ length: 3 }, () => {
-    const spot = new THREE.SpotLight(0xFFF6E8, 9, 8.5, Math.PI / 4.2, 0.75, 1.5);
+    const spot = new THREE.SpotLight(
+      ILUMINACAO.refletorCor,
+      0,
+      ILUMINACAO.refletorDistancia,
+      ILUMINACAO.refletorAngulo,
+      ILUMINACAO.refletorPenumbra,
+      ILUMINACAO.refletorDecaimento
+    );
     cena.add(spot, spot.target);
     return spot;
   });
 
   function atualizarPoolRefletores(centroIdx) {
-    const indices = [centroIdx, centroIdx + 1, centroIdx - 1];
+    const alvos = [
+      { idx: centroIdx,     intensidade: ILUMINACAO.refletorAtualIntensidade },
+      { idx: centroIdx + 1, intensidade: ILUMINACAO.refletorVizinhoIntensidade },
+      { idx: centroIdx - 1, intensidade: ILUMINACAO.refletorVizinhoIntensidade }
+    ];
+
     poolRefletores.forEach((spot, k) => {
-      const idx = indices[k];
+      const { idx, intensidade } = alvos[k];
       const obra = OBRAS[idx];
       if (!obra) {
         spot.intensity = 0;
         return;
       }
-      spot.intensity = 9;
+      spot.intensity = intensidade;
       const dirX = Math.sin(obra.posicao.rotY);
       const dirZ = Math.cos(obra.posicao.rotY);
       spot.position.set(
-        obra.posicao.x + dirX * 1.15,
-        3.55,
-        obra.posicao.z + dirZ * 1.15
+        obra.posicao.x + dirX * 1.25,
+        3.65,
+        obra.posicao.z + dirZ * 1.25
       );
-      spot.target.position.set(obra.posicao.x, CONFIG.alturaCentroObra, obra.posicao.z);
+      spot.target.position.set(obra.posicao.x, CONFIG.alturaCentroObra - 0.1, obra.posicao.z);
       spot.target.updateMatrixWorld();
     });
   }
@@ -496,9 +729,9 @@ function iniciarCena3D() {
     metalness: 0.72,
     roughness: 0.22,
     envMap: criarMapaReflexoDourado(),
-    envMapIntensity: 1.35,
+    envMapIntensity: 1.4,
     emissive: 0x9C6B12,
-    emissiveIntensity: 0.36
+    emissiveIntensity: 0.42
   });
 
   const fioDourado = new THREE.Mesh(fioGeo, fioMat);
@@ -510,10 +743,14 @@ function iniciarCena3D() {
   );
   cena.add(pontaFio);
 
-  const luzFio = new THREE.PointLight(0xFFD966, 1.4, 2.2, 2);
+  const luzFio = new THREE.PointLight(
+    ILUMINACAO.luzFioCor,
+    ILUMINACAO.luzFioIntensidade,
+    ILUMINACAO.luzFioDistancia,
+    2
+  );
   cena.add(luzFio);
 
-  // Calcula o parâmetro t exato na curva do fio para cada uma das 22 paradas
   const amostrasFio = 2400;
   const tabelaPontosFio = [];
   for (let i = 0; i <= amostrasFio; i++) {
@@ -579,7 +816,7 @@ function iniciarCena3D() {
     toneMapped: false
   });
 
-  /* ── Construção dos 22 Cavaletes (com geometria compartilhada) ── */
+  /* ── Construção dos 22 Cavaletes ── */
   const slotsObras = OBRAS.map((obra, indice) => {
     const grupo = new THREE.Group();
     grupo.position.set(obra.posicao.x, 0, obra.posicao.z);
@@ -657,7 +894,6 @@ function iniciarCena3D() {
       fotoMesh.scale.set(largura, altura, 1);
     }
 
-    // Proporção inicial padrão (3:4) antes da miniatura carregar
     aplicarProporcao(3 / 4);
 
     return {
@@ -665,7 +901,7 @@ function iniciarCena3D() {
       obra,
       fotoMesh,
       aplicarProporcao,
-      estado: 'vazio', // 'vazio' | 'carregando' | 'carregado' | 'erro'
+      estado: 'vazio',
       textura: null,
       material: null
     };
@@ -692,7 +928,6 @@ function iniciarCena3D() {
   }
 
   function processarFilaCarregamento() {
-    // 1. Descarta texturas distantes para manter a memória gráfica sob controle
     slotsObras.forEach((slot) => {
       if (Math.abs(slot.indice - centroJanelaAtual) > CONFIG.raioDescarte) {
         liberarSlot(slot);
@@ -701,7 +936,6 @@ function iniciarCena3D() {
 
     if (carregamentosAtivos >= CONFIG.maxCarregamentosSimultaneos) return;
 
-    // 2. Ordena candidatos por proximidade: atual, próxima, anterior, e assim por diante
     const candidatos = [];
     for (let d = 0; d <= CONFIG.raioCarregamento; d++) {
       const pares = d === 0 ? [centroJanelaAtual] : [centroJanelaAtual + d, centroJanelaAtual - d];
@@ -730,7 +964,6 @@ function iniciarCena3D() {
         carregamentosAtivos--;
         temposCarregamentoMs.push(performance.now() - inicioMs);
 
-        // Se o visitante já se afastou muito enquanto carregava, descarta imediatamente
         if (Math.abs(slot.indice - centroJanelaAtual) > CONFIG.raioDescarte) {
           textura.dispose();
           slot.estado = 'vazio';
@@ -744,6 +977,7 @@ function iniciarCena3D() {
         const proporcao = img && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 3 / 4;
         slot.aplicarProporcao(proporcao);
 
+        // Preservado: MeshBasicMaterial com toneMapped: false para fidelidade de cor
         const mat = new THREE.MeshBasicMaterial({
           map: textura,
           toneMapped: false
@@ -834,7 +1068,6 @@ function iniciarCena3D() {
       pontosObservacao[i] = { posicao, alvo };
     });
 
-    // Curvas Bézier pelo eixo central do corredor (impede atravessar cavaletes ou paredes)
     curvasCameraTrechos.length = 0;
     for (let i = 0; i < OBRAS.length - 1; i++) {
       const pInicio = pontosObservacao[i].posicao;
@@ -892,6 +1125,10 @@ function iniciarCena3D() {
 
     btnAnterior.disabled = indiceAtual === 0;
     btnProximo.disabled = indiceAtual === OBRAS.length - 1;
+
+    if (btnInicio) {
+      btnInicio.hidden = indiceAtual !== OBRAS.length - 1;
+    }
   }
 
   function iniciarDeslocamentoPara(novoIndice, instantaneo = false) {
@@ -900,7 +1137,7 @@ function iniciarCena3D() {
     atualizarHUD();
 
     if (instantaneo || prefersReducedMotion) {
-      interromperPercurso();
+      interromperPercurso(true);
       estadoPercurso.progressoAtual = alvoClamped;
       aplicarEstadoPercurso(alvoClamped);
       solicitarRender();
@@ -909,7 +1146,7 @@ function iniciarCena3D() {
 
     const distanciaProgresso = Math.abs(alvoClamped - estadoPercurso.progressoAtual);
     if (distanciaProgresso < 0.001) {
-      interromperPercurso();
+      interromperPercurso(false);
       aplicarEstadoPercurso(alvoClamped);
       solicitarRender();
       return;
@@ -920,33 +1157,59 @@ function iniciarCena3D() {
     estadoPercurso.duracaoMs = Math.max(600, distanciaProgresso * CONFIG.duracaoTrecho * 1000);
     estadoPercurso.inicioTempo = performance.now();
     estadoPercurso.ativo = true;
+
+    gerenciadorAudio.iniciarMovimento();
     solicitarRender();
   }
 
-  // Inicializa diante de 0 — O Louco
+  function voltarAoInicio() {
+    interromperPercurso(true);
+    estadoPercurso.progressoMaximoFio = 0;
+    estadoPercurso.progressoAtual = 0;
+    iniciarDeslocamentoPara(0, true);
+  }
+
+  // Inicializa diante de 0 — O Louco (sem reproduzir áudio)
   recalcularPontosEPercursos();
   iniciarDeslocamentoPara(0, true);
 
   /* ── Eventos de Controle ── */
   btnAnterior.addEventListener('click', () => {
+    if (btnAnterior.disabled) return;
     const base = estadoPercurso.ativo ? Math.ceil(estadoPercurso.progressoAtual) : indiceAtual;
-    if (base > 0) iniciarDeslocamentoPara(base - 1);
+    if (base > 0) {
+      gerenciadorAudio.tocarClique();
+      iniciarDeslocamentoPara(base - 1);
+    }
   });
 
   btnProximo.addEventListener('click', () => {
+    if (btnProximo.disabled) return;
     const base = estadoPercurso.ativo ? Math.floor(estadoPercurso.progressoAtual) : indiceAtual;
-    if (base < OBRAS.length - 1) iniciarDeslocamentoPara(base + 1);
+    if (base < OBRAS.length - 1) {
+      gerenciadorAudio.tocarClique();
+      iniciarDeslocamentoPara(base + 1);
+    }
   });
 
   btnVerObra.addEventListener('click', () => abrirModal(indiceAtual));
 
+  if (btnInicio) {
+    btnInicio.addEventListener('click', () => {
+      gerenciadorAudio.tocarClique();
+      voltarAoInicio();
+    });
+  }
+
   window.addEventListener('keydown', (e) => {
     if (modal.open) return;
-    if (e.key === 'ArrowLeft' && indiceAtual > 0) {
+    if (e.key === 'ArrowLeft' && !btnAnterior.disabled) {
       e.preventDefault();
+      gerenciadorAudio.tocarClique();
       iniciarDeslocamentoPara(indiceAtual - 1);
-    } else if (e.key === 'ArrowRight' && indiceAtual < OBRAS.length - 1) {
+    } else if (e.key === 'ArrowRight' && !btnProximo.disabled) {
       e.preventDefault();
+      gerenciadorAudio.tocarClique();
       iniciarDeslocamentoPara(indiceAtual + 1);
     } else if (e.key === 'Enter' && document.activeElement === document.body) {
       abrirModal(indiceAtual);
@@ -1064,6 +1327,7 @@ function iniciarCena3D() {
 
       if (frac >= 1) {
         estadoPercurso.ativo = false;
+        gerenciadorAudio.pararMovimento(false);
       }
     }
 
