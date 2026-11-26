@@ -5,11 +5,6 @@ import { ARCANOS, urlMiniatura, urlGrande } from './arcanos-data.js';
    CONFIGURAÇÕES PRINCIPAIS (ajustáveis)
    ===================================================== */
 const CONFIG = {
-  // Alternativa visual da extremidade do fio dourado:
-  // 'fio-livre' -> Alternativa A: fio mais fino com ponta delicada e livre
-  // 'agulha'    -> Alternativa B: pequena agulha metálica de bordado com o fio no olho
-  estiloExtremidadeFio: 'agulha',
-
   // Moldura preta fosca: 4% da largura da obra
   fatorEspessuraMoldura: 0.04,
   profundidadeMoldura: 0.045,
@@ -47,6 +42,7 @@ const CONFIG = {
   segmentosPorTrechoFio: 48,
   segmentosRadiaisFio: 8,
   raioFio: 0.015,
+  comprimentoTerminacaoFio: 0.11,
 
   // Otimização de memória e carregamento progressivo
   raioCarregamento: 3,
@@ -79,10 +75,10 @@ const ILUMINACAO = {
   refletorPenumbra: 0.82,
   refletorDecaimento: 1.45,
 
-  // Brilho suave acompanhando a extremidade do fio no espaço
-  luzFioCor: 0xFFE39A,
-  luzFioIntensidade: 0.7,
-  luzFioDistancia: 1.8
+  // Luz ambiente muito suave ao redor do fio, evitando halo concentrado na extremidade
+  luzFioCor: 0xFFE8B0,
+  luzFioIntensidade: 0.28,
+  luzFioDistancia: 2.4
 };
 
 /* =====================================================
@@ -591,7 +587,7 @@ function criarMapaReflexoDourado() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 256, 128);
 
-  ctx.fillStyle = 'rgba(255, 252, 235, 0.78)';
+  ctx.fillStyle = 'rgba(255, 252, 235, 0.68)';
   ctx.fillRect(24, 18, 48, 22);
   ctx.fillRect(148, 22, 64, 20);
 
@@ -633,100 +629,39 @@ function criarTexturaErroImagem(obra) {
 }
 
 /* =====================================================
-   EXTREMIDADE DO FIO DOURADO (Alternativa A e Alternativa B)
-   Centrada no eixo do fio (y = 0) e orientada para +Z
+   TERMINAÇÃO NATURAL DO FIO DOURADO
+   Continuidade direta do próprio fio no sentido tangencial (+Z),
+   com afinamento progressivo e suave, sem emendas ou ornamentos.
+   Criada uma única vez na inicialização (zero reconstrução por quadro).
    ===================================================== */
-function criarExtremidadeFio(estilo, fioMat, envMap) {
-  const grupo = new THREE.Group();
+function criarTerminacaoSuaveFio(fioMat) {
+  const r0 = CONFIG.raioFio;
+  const comprimento = CONFIG.comprimentoTerminacaoFio;
+  const passos = 12;
 
-  if (estilo === 'agulha') {
-    // Alternativa B — Pequena agulha metálica de bordado + fio conectado ao olho
-    const metalMat = new THREE.MeshStandardMaterial({
-      color: 0xD8DCE0,
-      metalness: 0.92,
-      roughness: 0.18,
-      envMap,
-      envMapIntensity: 1.25
-    });
+  // Perfil de revolução: começa em y = -0.002 com raio exato do fio (r0)
+  // para sobrepor suavemente o último anel do tubo e evitar qualquer fresta.
+  const perfil = [new THREE.Vector2(r0, -0.002)];
 
-    // Corpo da agulha centrado no eixo do fio (y = 0, direção +Z)
-    const haste = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.008, 0.008, 0.23, 10),
-      metalMat
-    );
-    haste.rotation.x = Math.PI / 2;
-    haste.position.set(0, 0, 0.175);
-    grupo.add(haste);
-
-    // Ponta fina da agulha voltada para frente (+Z)
-    const ponta = new THREE.Mesh(
-      new THREE.ConeGeometry(0.008, 0.085, 10),
-      metalMat
-    );
-    ponta.rotation.x = Math.PI / 2;
-    ponta.position.set(0, 0, 0.332);
-    grupo.add(ponta);
-
-    // Olho da agulha (duas hastes finas formando o vão central)
-    const geoLadoOlho = new THREE.CylinderGeometry(0.0038, 0.0038, 0.055, 8);
-    const olhoEsq = new THREE.Mesh(geoLadoOlho, metalMat);
-    olhoEsq.rotation.x = Math.PI / 2;
-    olhoEsq.position.set(-0.0068, 0, 0.036);
-    grupo.add(olhoEsq);
-
-    const olhoDir = new THREE.Mesh(geoLadoOlho, metalMat);
-    olhoDir.rotation.x = Math.PI / 2;
-    olhoDir.position.set(0.0068, 0, 0.036);
-    grupo.add(olhoDir);
-
-    // Fechamento traseiro do olho
-    const fundoOlho = new THREE.Mesh(
-      new THREE.SphereGeometry(0.0085, 8, 8),
-      metalMat
-    );
-    fundoOlho.scale.set(1.0, 0.85, 0.7);
-    fundoOlho.position.set(0, 0, 0.008);
-    grupo.add(fundoOlho);
-
-    // Fio dourado entrando continuamente no olho e dobrando para trás
-    const curvaPassada = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.0,   0.0,   -0.015),
-      new THREE.Vector3(0.0,   0.0,    0.036),
-      new THREE.Vector3(0.018, -0.004, 0.024),
-      new THREE.Vector3(0.028, -0.010, -0.048)
-    ]);
-    const fioPassado = new THREE.Mesh(
-      new THREE.TubeGeometry(curvaPassada, 16, CONFIG.raioFio * 0.65, 6, false),
-      fioMat
-    );
-    grupo.add(fioPassado);
-    return grupo;
+  for (let i = 0; i <= passos; i++) {
+    const u = i / passos;
+    // Curva cosseno suave: tangente paralela ao corpo do fio em u=0
+    // e afinamento orgânico sem formar ponta rígida ou pontiaguda.
+    const fatorSuave = 0.5 * (1 + Math.cos(Math.PI * u));
+    const raio = r0 * (0.28 + 0.72 * fatorSuave);
+    perfil.push(new THREE.Vector2(raio, u * comprimento));
   }
 
-  // Alternativa A — Fio livre: extremidade delicada, fina e suspensa
-  const curvaPonta = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.0,    0.0,    0.0),
-    new THREE.Vector3(0.014,  0.004,  0.065),
-    new THREE.Vector3(-0.008, -0.003, 0.135),
-    new THREE.Vector3(0.010,  0.002,  0.195)
-  ]);
+  // Fechamento sutil e macio da fibra na ponta final
+  perfil.push(new THREE.Vector2(r0 * 0.16, comprimento + 0.004));
+  perfil.push(new THREE.Vector2(0.0, comprimento + 0.006));
 
-  const pontaGeo = new THREE.TubeGeometry(curvaPonta, 16, CONFIG.raioFio * 0.72, 6, false);
-  const pos = pontaGeo.attributes.position;
-  const v = new THREE.Vector3();
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const t = THREE.MathUtils.clamp(v.z / 0.195, 0, 1);
-    const centro = curvaPonta.getPoint(t);
-    const escala = 1 - t * 0.78;
-    v.x = centro.x + (v.x - centro.x) * escala;
-    v.y = centro.y + (v.y - centro.y) * escala;
-    pos.setXYZ(i, v.x, v.y, v.z);
-  }
-  pontaGeo.computeVertexNormals();
+  const geo = new THREE.LatheGeometry(perfil, CONFIG.segmentosRadiaisFio);
+  // Rotaciona o eixo de revolução (+Y) para +Z (direção tangencial de lookAt)
+  geo.rotateX(Math.PI / 2);
+  geo.computeVertexNormals();
 
-  grupo.add(new THREE.Mesh(pontaGeo, fioMat));
-  return grupo;
+  return new THREE.Mesh(geo, fioMat);
 }
 
 /* =====================================================
@@ -899,7 +834,6 @@ function iniciarCena3D() {
   cena.add(rodapeFundo);
 
   /* ── Fio Dourado Suspenso no Espaço (22 Paradas) ── */
-  // Garante altura segura ligeiramente abaixo da base das molduras
   const yBaseFio = Math.min(CONFIG.alturaFio, ALTURA_BASE_MOLDURA_REF - 0.06);
   const ampY = CONFIG.amplitudeOndulacaoFio;
 
@@ -910,7 +844,6 @@ function iniciarCena3D() {
   const alvosParadasFio = [];
 
   OBRAS.forEach((obra, i) => {
-    // Posicionado à frente e ligeiramente abaixo da moldura, sem atravessar o cavalete
     const yParada = yBaseFio + Math.sin(i * 0.9) * (ampY * 0.3);
     const pontoDianteObra = new THREE.Vector3(
       obra.lado * 1.18,
@@ -944,27 +877,27 @@ function iniciarCena3D() {
 
   const envMapDourado = criarMapaReflexoDourado();
   const fioMat = new THREE.MeshStandardMaterial({
-    color: 0xE2B23A,
-    metalness: 0.65,
-    roughness: 0.30,
+    color: 0xDFB03A,
+    metalness: 0.62,
+    roughness: 0.34,
     envMap: envMapDourado,
-    envMapIntensity: 1.15,
-    emissive: 0x6E4A0B,
-    emissiveIntensity: 0.20
+    envMapIntensity: 1.05,
+    emissive: 0x66450B,
+    emissiveIntensity: 0.16
   });
 
   const fioDourado = new THREE.Mesh(fioGeo, fioMat);
   cena.add(fioDourado);
 
-  // Extremidade configurável: 'fio-livre' (Alternativa A) ou 'agulha' (Alternativa B)
-  const extremidadeFio = criarExtremidadeFio(CONFIG.estiloExtremidadeFio, fioMat, envMapDourado);
-  cena.add(extremidadeFio);
+  // Continuação sutil e afilada do próprio fio (sem ornamentos ou agulha)
+  const terminacaoFio = criarTerminacaoSuaveFio(fioMat);
+  cena.add(terminacaoFio);
 
   const luzFio = new THREE.PointLight(
     ILUMINACAO.luzFioCor,
     ILUMINACAO.luzFioIntensidade,
     ILUMINACAO.luzFioDistancia,
-    2
+    1.6
   );
   cena.add(luzFio);
 
@@ -1005,16 +938,17 @@ function iniciarCena3D() {
     const indicesPorSegmento = CONFIG.segmentosRadiaisFio * 6;
     fioGeo.setDrawRange(0, segsVisiveis * indicesPorSegmento);
 
-    // Mantém a extremidade (agulha ou fio livre) exatamente conectada e orientada na curva 3D
-    const pontoPonta = curvaFio.getPointAt(tLimitado);
-    curvaFio.getTangentAt(tLimitado, tempTangenteFio).normalize();
-    extremidadeFio.position.copy(pontoPonta);
+    // Alinha a terminação exatamente ao último anel renderizado do tubo (sem emenda)
+    const tExato = THREE.MathUtils.clamp(segsVisiveis / segmentosTubularesTotais, 0.001, 1);
+    const pontoPonta = curvaFio.getPointAt(tExato);
+    curvaFio.getTangentAt(tExato, tempTangenteFio).normalize();
+    terminacaoFio.position.copy(pontoPonta);
     tempOlharFio.copy(pontoPonta).add(tempTangenteFio);
-    extremidadeFio.lookAt(tempOlharFio);
+    terminacaoFio.lookAt(tempOlharFio);
 
-    // Luz acompanha a altura real do fio suspenso
+    // Iluminação difusa e suave acima do fio, evitando halo concentrado na ponta
     const pontoLuz = curvaFio.getPointAt(THREE.MathUtils.clamp(tPosicaoAtual, 0.002, 1));
-    luzFio.position.set(pontoLuz.x, pontoLuz.y + 0.16, pontoLuz.z);
+    luzFio.position.set(pontoLuz.x, pontoLuz.y + 0.34, pontoLuz.z);
   }
 
   /* ── Geometrias e Materiais Compartilhados dos 22 Cavaletes ── */
@@ -1330,8 +1264,6 @@ function iniciarCena3D() {
     const tVisivelFio = mapearProgressoParaFio(estadoPercurso.progressoMaximoFio, true);
     atualizarGeometriaFio(tVisivelFio, tFioAtual);
 
-    // Mantém a câmera nos mesmos pontos de observação; durante o deslocamento,
-    // acompanha a altura real do fio suspenso em vez de apontar para o chão
     tempAlvo.lerpVectors(pontosObservacao[seg].alvo, pontosObservacao[seg + 1].alvo, u);
     const pesoGuia = Math.sin(u * Math.PI) * 0.58;
     if (pesoGuia > 0.001) {
@@ -1510,7 +1442,6 @@ function iniciarCena3D() {
       ? Math.round(temposCarregamentoMs.reduce((a, b) => a + b, 0) / temposCarregamentoMs.length)
       : 0;
     return {
-      estiloExtremidadeFio: CONFIG.estiloExtremidadeFio,
       alturaFioM: yBaseFio,
       baseMolduraRefM: Number(ALTURA_BASE_MOLDURA_REF.toFixed(3)),
       obraAtual: `${OBRAS[indiceAtual].romano} — ${OBRAS[indiceAtual].nome} (${indiceAtual + 1}/${OBRAS.length})`,
@@ -1529,7 +1460,7 @@ function iniciarCena3D() {
     if (!painelDebug) return;
     const d = obterDiagnostico();
     painelDebug.textContent =
-      `Fio: ${d.estiloExtremidadeFio} (y=${d.alturaFioM.toFixed(2)}m | moldura=${d.baseMolduraRefM}m)\n` +
+      `Fio: y=${d.alturaFioM.toFixed(2)}m (moldura=${d.baseMolduraRefM}m)\n` +
       `VRAM: ${d.texturasEmMemoria} (slots: ${d.slotsCarregados}/22) | Geoms: ${d.geometriasEmMemoria} | Calls: ${d.drawCallsPorQuadro}\n` +
       `Renders: ${d.totalRendersExecutados} | Carga média: ${d.tempoMedioCargaMs} ms`;
   }
