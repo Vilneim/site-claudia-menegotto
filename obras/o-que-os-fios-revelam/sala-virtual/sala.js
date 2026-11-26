@@ -42,7 +42,6 @@ const CONFIG = {
   segmentosPorTrechoFio: 48,
   segmentosRadiaisFio: 8,
   raioFio: 0.015,
-  comprimentoTerminacaoFio: 0.11,
 
   // Otimização de memória e carregamento progressivo
   raioCarregamento: 3,
@@ -629,42 +628,6 @@ function criarTexturaErroImagem(obra) {
 }
 
 /* =====================================================
-   TERMINAÇÃO NATURAL DO FIO DOURADO
-   Continuidade direta do próprio fio no sentido tangencial (+Z),
-   com afinamento progressivo e suave, sem emendas ou ornamentos.
-   Criada uma única vez na inicialização (zero reconstrução por quadro).
-   ===================================================== */
-function criarTerminacaoSuaveFio(fioMat) {
-  const r0 = CONFIG.raioFio;
-  const comprimento = CONFIG.comprimentoTerminacaoFio;
-  const passos = 12;
-
-  // Perfil de revolução: começa em y = -0.002 com raio exato do fio (r0)
-  // para sobrepor suavemente o último anel do tubo e evitar qualquer fresta.
-  const perfil = [new THREE.Vector2(r0, -0.002)];
-
-  for (let i = 0; i <= passos; i++) {
-    const u = i / passos;
-    // Curva cosseno suave: tangente paralela ao corpo do fio em u=0
-    // e afinamento orgânico sem formar ponta rígida ou pontiaguda.
-    const fatorSuave = 0.5 * (1 + Math.cos(Math.PI * u));
-    const raio = r0 * (0.28 + 0.72 * fatorSuave);
-    perfil.push(new THREE.Vector2(raio, u * comprimento));
-  }
-
-  // Fechamento sutil e macio da fibra na ponta final
-  perfil.push(new THREE.Vector2(r0 * 0.16, comprimento + 0.004));
-  perfil.push(new THREE.Vector2(0.0, comprimento + 0.006));
-
-  const geo = new THREE.LatheGeometry(perfil, CONFIG.segmentosRadiaisFio);
-  // Rotaciona o eixo de revolução (+Y) para +Z (direção tangencial de lookAt)
-  geo.rotateX(Math.PI / 2);
-  geo.computeVertexNormals();
-
-  return new THREE.Mesh(geo, fioMat);
-}
-
-/* =====================================================
    CONSTRUÇÃO DA GALERIA 3D (22 ARCANOS)
    ===================================================== */
 function iniciarCena3D() {
@@ -889,10 +852,6 @@ function iniciarCena3D() {
   const fioDourado = new THREE.Mesh(fioGeo, fioMat);
   cena.add(fioDourado);
 
-  // Continuação sutil e afilada do próprio fio (sem ornamentos ou agulha)
-  const terminacaoFio = criarTerminacaoSuaveFio(fioMat);
-  cena.add(terminacaoFio);
-
   const luzFio = new THREE.PointLight(
     ILUMINACAO.luzFioCor,
     ILUMINACAO.luzFioIntensidade,
@@ -929,24 +888,13 @@ function iniciarCena3D() {
     return THREE.MathUtils.lerp(tParadasFio[seg], tParadasFio[seg + 1], uCurva);
   }
 
-  const tempTangenteFio = new THREE.Vector3();
-  const tempOlharFio = new THREE.Vector3();
-
   function atualizarGeometriaFio(tVisivel, tPosicaoAtual) {
     const tLimitado = THREE.MathUtils.clamp(tVisivel, 0.002, 1);
     const segsVisiveis = Math.max(1, Math.round(tLimitado * segmentosTubularesTotais));
     const indicesPorSegmento = CONFIG.segmentosRadiaisFio * 6;
     fioGeo.setDrawRange(0, segsVisiveis * indicesPorSegmento);
 
-    // Alinha a terminação exatamente ao último anel renderizado do tubo (sem emenda)
-    const tExato = THREE.MathUtils.clamp(segsVisiveis / segmentosTubularesTotais, 0.001, 1);
-    const pontoPonta = curvaFio.getPointAt(tExato);
-    curvaFio.getTangentAt(tExato, tempTangenteFio).normalize();
-    terminacaoFio.position.copy(pontoPonta);
-    tempOlharFio.copy(pontoPonta).add(tempTangenteFio);
-    terminacaoFio.lookAt(tempOlharFio);
-
-    // Iluminação difusa e suave acima do fio, evitando halo concentrado na ponta
+    // Iluminação difusa e suave acima do fio
     const pontoLuz = curvaFio.getPointAt(THREE.MathUtils.clamp(tPosicaoAtual, 0.002, 1));
     luzFio.position.set(pontoLuz.x, pontoLuz.y + 0.34, pontoLuz.z);
   }
