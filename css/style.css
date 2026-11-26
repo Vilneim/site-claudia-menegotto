@@ -236,7 +236,7 @@ a { color: inherit; text-decoration: none; }
   opacity: .6;
 }
 
-/* Scroll indicator */
+/* Scroll indicator — texto ROLAR estático; animação suave apenas na linha */
 .scroll-hint {
   position: absolute;
   bottom: 2.5rem;
@@ -250,17 +250,24 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: .15em;
   text-transform: uppercase;
   color: var(--text-muted);
-  animation: bounce 2.5s ease-in-out infinite;
 }
 .scroll-hint::after {
   content: '';
   display: block;
   width: 1px; height: 2.5rem;
-  background: linear-gradient(to bottom, var(--gold-pale), transparent);
+  background: linear-gradient(to bottom, var(--gold), transparent);
+  transform-origin: top center;
+  animation: scroll-line 2.8s ease-in-out infinite;
 }
-@keyframes bounce {
-  0%,100% { transform: translateX(-50%) translateY(0); }
-  50%      { transform: translateX(-50%) translateY(6px); }
+@keyframes scroll-line {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+    opacity: .45;
+  }
+  50% {
+    transform: translateY(5px) scaleY(.86);
+    opacity: .95;
+  }
 }
 
 /* =====================================================
@@ -299,13 +306,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-outline {
-  background: var(--gold);
-  color: var(--white);
-  border-color: var(--gold);
+  color: var(--text);
+  border-color: var(--gold-pale);
 }
 .btn-outline:hover {
-  background: var(--gold-light);
-  border-color: var(--gold-light);
+  background: var(--gold-pale);
+  border-color: var(--gold);
 }
 
 .btn-icon {
@@ -490,14 +496,19 @@ blockquote cite {
 
 .bio-img-wrap {
   position: relative;
+  padding: 1rem 0 0 1rem;
 }
 .bio-img-wrap::before {
   content: '';
   position: absolute;
-  inset: -1.25rem 1.25rem 1.25rem -1.25rem;
+  top: 0;
+  left: 0;
+  right: 1rem;
+  bottom: 1rem;
   border: 1px solid var(--gold-pale);
   border-radius: var(--radius);
   z-index: 0;
+  pointer-events: none;
 }
 .bio-img {
   position: relative;
@@ -1043,7 +1054,16 @@ dialog::backdrop {
    ===================================================== */
 @media (max-width: 900px) {
   .bio-section { grid-template-columns: 1fr; }
-  .bio-img-wrap { max-width: 420px; }
+  .bio-img-wrap {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+    padding: .75rem 0 0 .75rem;
+  }
+  .bio-img-wrap::before {
+    right: .75rem;
+    bottom: .75rem;
+  }
 
   .obra-hero { grid-template-columns: 1fr; }
   .obra-hero-img { max-height: 320px; aspect-ratio: 16/9; }
@@ -1086,6 +1106,9 @@ dialog::backdrop {
   *, *::before, *::after {
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;
+  }
+  .scroll-hint::after {
+    animation: none !important;
   }
   .revelar, .revelar-esq {
     opacity: 1;

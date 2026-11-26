@@ -5,6 +5,11 @@ import { ARCANOS, urlMiniatura, urlGrande } from './arcanos-data.js';
    CONFIGURAÇÕES PRINCIPAIS (ajustáveis)
    ===================================================== */
 const CONFIG = {
+  // Alternativa visual da extremidade do fio dourado:
+  // 'fio-livre' -> Alternativa A: fio mais fino com ponta delicada e livre
+  // 'agulha'    -> Alternativa B: pequena agulha metálica de bordado com o fio no olho
+  estiloExtremidadeFio: 'agulha',
+
   // Moldura preta fosca: 4% da largura da obra
   fatorEspessuraMoldura: 0.04,
   profundidadeMoldura: 0.045,
@@ -31,10 +36,17 @@ const CONFIG = {
   // Duração do deslocamento suave entre uma obra e a próxima (segundos)
   duracaoTrecho: 2.2,
 
-  // Geometria do fio dourado no piso
+  // Elevação e ondulação do fio dourado suspenso no espaço
+  // Referência: a base inferior das molduras mais altas fica em ~0.85 m
+  // e a prateleira do cavalete em ~0.81 m.
+  alturaFio: 0.74,
+  amplitudeOndulacaoFio: 0.045,
+  recuoFrontalFio: 0.35,
+
+  // Geometria do fio dourado (delicado como fio de bordado)
   segmentosPorTrechoFio: 48,
   segmentosRadiaisFio: 8,
-  raioFio: 0.024,
+  raioFio: 0.015,
 
   // Otimização de memória e carregamento progressivo
   raioCarregamento: 3,
@@ -42,8 +54,14 @@ const CONFIG = {
   maxCarregamentosSimultaneos: 2
 };
 
+// Altura real de referência da base inferior das molduras (obra de altura máxima)
+const ALTURA_BASE_MOLDURA_REF =
+  CONFIG.alturaCentroObra -
+  (CONFIG.alturaMaxObra / 2) -
+  (CONFIG.larguraMaxObra * CONFIG.fatorEspessuraMoldura);
+
 /* =====================================================
-   ILUMINAÇÃO DE GALERIA (ajuste livre das intensidades)
+   ILUMINAÇÃO DE GALERIA (preservada e configurável)
    ===================================================== */
 const ILUMINACAO = {
   corFundoNeblina: 0xD2C8B8,
@@ -53,7 +71,6 @@ const ILUMINACAO = {
   hemisfericaChao: 0x8F7C66,
   hemisfericaIntensidade: 0.32,
 
-  // Pool de 3 refletores (obra atual em destaque + vizinhas discretas)
   refletorCor: 0xFFE9C4,
   refletorAtualIntensidade: 16.0,
   refletorVizinhoIntensidade: 5.5,
@@ -62,24 +79,29 @@ const ILUMINACAO = {
   refletorPenumbra: 0.82,
   refletorDecaimento: 1.45,
 
-  // Luz dourada sutil que acompanha o fio no piso
-  luzFioCor: 0xFFD966,
-  luzFioIntensidade: 1.8,
-  luzFioDistancia: 2.6
+  // Brilho suave acompanhando a extremidade do fio no espaço
+  luzFioCor: 0xFFE39A,
+  luzFioIntensidade: 0.7,
+  luzFioDistancia: 1.8
 };
 
 /* =====================================================
-   CONFIGURAÇÕES DE ÁUDIO
+   CONFIGURAÇÕES DE ÁUDIO (Música e Efeitos independentes)
    ===================================================== */
 const AUDIO_CONFIG = {
-  chaveSessao: 'sala-virtual-som',
+  chaveSessaoEfeitos: 'sala-virtual-efeitos',
+  chaveSessaoMusica: 'sala-virtual-musica',
   urlClique: './audio/click-351398.mp3',
   urlMovimento: './audio/movimento-suave.mp3',
+  urlMusica: './audio/musica-ambiente.mp3',
   volumeClique: 0.28,
   volumeMovimento: 0.22,
+  volumeMusica: 0.16,
   intervaloMinCliqueMs: 90,
   fadeInMovimentoMs: 260,
-  fadeOutMovimentoMs: 520
+  fadeOutMovimentoMs: 520,
+  fadeInMusicaMs: 1100,
+  fadeOutMusicaMs: 700
 };
 
 /* =====================================================
@@ -87,7 +109,8 @@ const AUDIO_CONFIG = {
    ===================================================== */
 const canvas         = document.getElementById('sala-canvas');
 const topbar         = document.querySelector('.sala-topbar');
-const btnSom         = document.getElementById('btn-som');
+const btnMusica      = document.getElementById('btn-musica');
+const btnEfeitos     = document.getElementById('btn-efeitos');
 const hud            = document.getElementById('sala-hud');
 const hudInfo        = document.querySelector('.hud-info');
 const hudControles   = document.querySelector('.hud-controles');
@@ -116,89 +139,132 @@ const modoDebug = new URLSearchParams(window.location.search).get('debug') === '
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 
 /* =====================================================
-   GERENCIADOR DE ÁUDIO (inicia desativado; seguro se faltar arquivo)
+   GERENCIADOR DE ÁUDIO INDEPENDENTE (Música + Efeitos)
+   Inicia sempre desativado; funciona sem erros se faltar arquivo
    ===================================================== */
 function criarGerenciadorAudio() {
-  let ativo = false;
+  let efeitosAtivos = false;
+  let musicaAtiva = false;
+  let musicaPausadaPorAba = false;
   let ultimoCliqueMs = 0;
-  let fadeRafId = null;
-  let movimentoDisponivel = true;
+
+  let fadeMovRaf = null;
+  let fadeMusRaf = null;
+
   let cliqueDisponivel = true;
+  let movimentoDisponivel = true;
+  let musicaDisponivel = true;
 
   const audioClique = new Audio(AUDIO_CONFIG.urlClique);
   audioClique.preload = 'none';
   audioClique.volume = AUDIO_CONFIG.volumeClique;
-  audioClique.addEventListener('error', () => {
-    cliqueDisponivel = false;
-  });
+  audioClique.addEventListener('error', () => { cliqueDisponivel = false; });
 
   const audioMovimento = new Audio(AUDIO_CONFIG.urlMovimento);
   audioMovimento.preload = 'none';
   audioMovimento.volume = 0;
-  audioMovimento.addEventListener('error', () => {
-    movimentoDisponivel = false;
+  audioMovimento.addEventListener('error', () => { movimentoDisponivel = false; });
+
+  const audioMusica = new Audio(AUDIO_CONFIG.urlMusica);
+  audioMusica.preload = 'none';
+  audioMusica.loop = true;
+  audioMusica.volume = 0;
+  audioMusica.addEventListener('error', () => {
+    musicaDisponivel = false;
+    musicaAtiva = false;
+    atualizarBotoesAudio();
   });
 
-  function cancelarFade() {
-    if (fadeRafId !== null) {
-      cancelAnimationFrame(fadeRafId);
-      fadeRafId = null;
+  function animarVolume(audio, destino, duracaoMs, tipo, aoConcluir) {
+    if (tipo === 'mov' && fadeMovRaf !== null) {
+      cancelAnimationFrame(fadeMovRaf);
+      fadeMovRaf = null;
     }
-  }
+    if (tipo === 'mus' && fadeMusRaf !== null) {
+      cancelAnimationFrame(fadeMusRaf);
+      fadeMusRaf = null;
+    }
 
-  function animarVolume(audio, destino, duracaoMs, aoConcluir) {
-    cancelarFade();
     const volInicio = audio.volume;
     const inicio = performance.now();
 
     function passo(agora) {
       const t = duracaoMs > 0 ? Math.min((agora - inicio) / duracaoMs, 1) : 1;
-      audio.volume = THREE.MathUtils.clamp(
-        volInicio + (destino - volInicio) * t,
-        0,
-        1
-      );
+      audio.volume = THREE.MathUtils.clamp(volInicio + (destino - volInicio) * t, 0, 1);
 
       if (t < 1) {
-        fadeRafId = requestAnimationFrame(passo);
+        const id = requestAnimationFrame(passo);
+        if (tipo === 'mov') fadeMovRaf = id;
+        else fadeMusRaf = id;
       } else {
-        fadeRafId = null;
+        if (tipo === 'mov') fadeMovRaf = null;
+        else fadeMusRaf = null;
         if (aoConcluir) aoConcluir();
       }
     }
 
-    fadeRafId = requestAnimationFrame(passo);
+    const id = requestAnimationFrame(passo);
+    if (tipo === 'mov') fadeMovRaf = id;
+    else fadeMusRaf = id;
   }
 
-  function atualizarBotaoSom() {
-    if (!btnSom) return;
-    btnSom.textContent = ativo ? 'Silenciar' : 'Ativar som';
-    btnSom.setAttribute('aria-pressed', String(ativo));
-  }
-
-  function definirAtivo(novoEstado, salvarSessao = true) {
-    ativo = Boolean(novoEstado);
-    atualizarBotaoSom();
-
-    if (salvarSessao) {
-      try {
-        sessionStorage.setItem(AUDIO_CONFIG.chaveSessao, ativo ? 'ativo' : 'silenciado');
-      } catch {
-        // Ignora caso o navegador bloqueie sessionStorage
+  function atualizarBotoesAudio() {
+    if (btnMusica) {
+      if (!musicaDisponivel) {
+        btnMusica.disabled = true;
+        btnMusica.setAttribute('aria-pressed', 'false');
+        btnMusica.title = 'Arquivo de música ambiente ainda não disponível';
+      } else {
+        btnMusica.disabled = false;
+        btnMusica.setAttribute('aria-pressed', String(musicaAtiva));
+        btnMusica.title = musicaAtiva ? 'Silenciar música ambiente' : 'Ativar música ambiente';
       }
     }
-
-    if (!ativo) {
-      pararMovimento(true);
-    } else {
-      // Prepara os arquivos após gesto voluntário do visitante
-      if (cliqueDisponivel) audioClique.load();
-      if (movimentoDisponivel) audioMovimento.load();
+    if (btnEfeitos) {
+      btnEfeitos.setAttribute('aria-pressed', String(efeitosAtivos));
+      btnEfeitos.title = efeitosAtivos ? 'Silenciar efeitos sonoros' : 'Ativar efeitos sonoros';
     }
+  }
+
+  function iniciarMusica() {
+    if (!musicaDisponivel || document.hidden) return;
+    try {
+      audioMusica.volume = 0;
+      const p = audioMusica.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          if (musicaAtiva && !document.hidden) {
+            animarVolume(audioMusica, AUDIO_CONFIG.volumeMusica, AUDIO_CONFIG.fadeInMusicaMs, 'mus');
+          }
+        }).catch(() => {
+          musicaAtiva = false;
+          atualizarBotoesAudio();
+        });
+      }
+    } catch {
+      musicaAtiva = false;
+      atualizarBotoesAudio();
+    }
+  }
+
+  function pararMusica(imediato = false) {
+    if (audioMusica.paused && audioMusica.volume === 0) return;
+    if (imediato) {
+      if (fadeMusRaf !== null) {
+        cancelAnimationFrame(fadeMusRaf);
+        fadeMusRaf = null;
+      }
+      audioMusica.pause();
+      audioMusica.volume = 0;
+      return;
+    }
+    animarVolume(audioMusica, 0, AUDIO_CONFIG.fadeOutMusicaMs, 'mus', () => {
+      audioMusica.pause();
+    });
   }
 
   function tocarClique() {
-    if (!ativo || !cliqueDisponivel) return;
+    if (!efeitosAtivos || !cliqueDisponivel) return;
     const agora = performance.now();
     if (agora - ultimoCliqueMs < AUDIO_CONFIG.intervaloMinCliqueMs) return;
     ultimoCliqueMs = agora;
@@ -215,8 +281,11 @@ function criarGerenciadorAudio() {
   }
 
   function iniciarMovimento() {
-    if (!ativo || !movimentoDisponivel) return;
-    cancelarFade();
+    if (!efeitosAtivos || !movimentoDisponivel) return;
+    if (fadeMovRaf !== null) {
+      cancelAnimationFrame(fadeMovRaf);
+      fadeMovRaf = null;
+    }
 
     try {
       audioMovimento.pause();
@@ -225,62 +294,102 @@ function criarGerenciadorAudio() {
       const p = audioMovimento.play();
       if (p && typeof p.then === 'function') {
         p.then(() => {
-          if (ativo) {
+          if (efeitosAtivos) {
             animarVolume(
               audioMovimento,
               AUDIO_CONFIG.volumeMovimento,
-              AUDIO_CONFIG.fadeInMovimentoMs
+              AUDIO_CONFIG.fadeInMovimentoMs,
+              'mov'
             );
           }
         }).catch(() => {});
       }
     } catch {
-      // Ignora se arquivo ausente ou bloqueado
+      // Ignora se arquivo ausente
     }
   }
 
   function pararMovimento(imediato = false) {
     if (!movimentoDisponivel) return;
-    if (audioMovimento.paused && audioMovimento.volume === 0) {
-      cancelarFade();
-      return;
-    }
+    if (audioMovimento.paused && audioMovimento.volume === 0) return;
 
     if (imediato) {
-      cancelarFade();
+      if (fadeMovRaf !== null) {
+        cancelAnimationFrame(fadeMovRaf);
+        fadeMovRaf = null;
+      }
       audioMovimento.pause();
       audioMovimento.currentTime = 0;
       audioMovimento.volume = 0;
       return;
     }
 
-    animarVolume(audioMovimento, 0, AUDIO_CONFIG.fadeOutMovimentoMs, () => {
+    animarVolume(audioMovimento, 0, AUDIO_CONFIG.fadeOutMovimentoMs, 'mov', () => {
       audioMovimento.pause();
       audioMovimento.currentTime = 0;
     });
   }
 
-  // Inicia desativado; preserva preferência da sessão apenas se já ativada antes
-  try {
-    if (sessionStorage.getItem(AUDIO_CONFIG.chaveSessao) === 'ativo') {
-      ativo = true;
+  function suspenderPorAbaOculta() {
+    pararMovimento(true);
+    if (musicaAtiva && !audioMusica.paused) {
+      musicaPausadaPorAba = true;
+      pararMusica(true);
     }
-  } catch {
-    ativo = false;
   }
-  atualizarBotaoSom();
 
-  if (btnSom) {
-    btnSom.addEventListener('click', () => {
-      definirAtivo(!ativo, true);
-      if (ativo) tocarClique();
+  function retomarAposAbaVisivel() {
+    if (musicaAtiva && musicaPausadaPorAba) {
+      musicaPausadaPorAba = false;
+      iniciarMusica();
+    }
+  }
+
+  // Inicia sempre desativado até autorização voluntária do visitante
+  atualizarBotoesAudio();
+
+  if (btnEfeitos) {
+    btnEfeitos.addEventListener('click', () => {
+      efeitosAtivos = !efeitosAtivos;
+      atualizarBotoesAudio();
+      try {
+        sessionStorage.setItem(AUDIO_CONFIG.chaveSessaoEfeitos, efeitosAtivos ? 'ativo' : 'silenciado');
+      } catch {}
+
+      if (efeitosAtivos) {
+        if (cliqueDisponivel) audioClique.load();
+        if (movimentoDisponivel) audioMovimento.load();
+        tocarClique();
+      } else {
+        pararMovimento(true);
+      }
+    });
+  }
+
+  if (btnMusica) {
+    btnMusica.addEventListener('click', () => {
+      if (!musicaDisponivel) return;
+      musicaAtiva = !musicaAtiva;
+      musicaPausadaPorAba = false;
+      atualizarBotoesAudio();
+      try {
+        sessionStorage.setItem(AUDIO_CONFIG.chaveSessaoMusica, musicaAtiva ? 'ativo' : 'silenciado');
+      } catch {}
+
+      if (musicaAtiva) {
+        iniciarMusica();
+      } else {
+        pararMusica(false);
+      }
     });
   }
 
   return {
     tocarClique,
     iniciarMovimento,
-    pararMovimento
+    pararMovimento,
+    suspenderPorAbaOculta,
+    retomarAposAbaVisivel
   };
 }
 
@@ -352,7 +461,8 @@ function registrarAviso(mensagem) {
 function ativarFallbackSemWebGL() {
   canvas.style.display = 'none';
   hud.hidden = true;
-  if (btnSom) btnSom.hidden = true;
+  if (btnMusica) btnMusica.hidden = true;
+  if (btnEfeitos) btnEfeitos.hidden = true;
   fallbackEl.hidden = false;
 
   OBRAS.forEach((obra, i) => {
@@ -481,7 +591,7 @@ function criarMapaReflexoDourado() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 256, 128);
 
-  ctx.fillStyle = 'rgba(255, 252, 235, 0.85)';
+  ctx.fillStyle = 'rgba(255, 252, 235, 0.78)';
   ctx.fillRect(24, 18, 48, 22);
   ctx.fillRect(148, 22, 64, 20);
 
@@ -520,6 +630,103 @@ function criarTexturaErroImagem(obra) {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/* =====================================================
+   EXTREMIDADE DO FIO DOURADO (Alternativa A e Alternativa B)
+   Centrada no eixo do fio (y = 0) e orientada para +Z
+   ===================================================== */
+function criarExtremidadeFio(estilo, fioMat, envMap) {
+  const grupo = new THREE.Group();
+
+  if (estilo === 'agulha') {
+    // Alternativa B — Pequena agulha metálica de bordado + fio conectado ao olho
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: 0xD8DCE0,
+      metalness: 0.92,
+      roughness: 0.18,
+      envMap,
+      envMapIntensity: 1.25
+    });
+
+    // Corpo da agulha centrado no eixo do fio (y = 0, direção +Z)
+    const haste = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.008, 0.008, 0.23, 10),
+      metalMat
+    );
+    haste.rotation.x = Math.PI / 2;
+    haste.position.set(0, 0, 0.175);
+    grupo.add(haste);
+
+    // Ponta fina da agulha voltada para frente (+Z)
+    const ponta = new THREE.Mesh(
+      new THREE.ConeGeometry(0.008, 0.085, 10),
+      metalMat
+    );
+    ponta.rotation.x = Math.PI / 2;
+    ponta.position.set(0, 0, 0.332);
+    grupo.add(ponta);
+
+    // Olho da agulha (duas hastes finas formando o vão central)
+    const geoLadoOlho = new THREE.CylinderGeometry(0.0038, 0.0038, 0.055, 8);
+    const olhoEsq = new THREE.Mesh(geoLadoOlho, metalMat);
+    olhoEsq.rotation.x = Math.PI / 2;
+    olhoEsq.position.set(-0.0068, 0, 0.036);
+    grupo.add(olhoEsq);
+
+    const olhoDir = new THREE.Mesh(geoLadoOlho, metalMat);
+    olhoDir.rotation.x = Math.PI / 2;
+    olhoDir.position.set(0.0068, 0, 0.036);
+    grupo.add(olhoDir);
+
+    // Fechamento traseiro do olho
+    const fundoOlho = new THREE.Mesh(
+      new THREE.SphereGeometry(0.0085, 8, 8),
+      metalMat
+    );
+    fundoOlho.scale.set(1.0, 0.85, 0.7);
+    fundoOlho.position.set(0, 0, 0.008);
+    grupo.add(fundoOlho);
+
+    // Fio dourado entrando continuamente no olho e dobrando para trás
+    const curvaPassada = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.0,   0.0,   -0.015),
+      new THREE.Vector3(0.0,   0.0,    0.036),
+      new THREE.Vector3(0.018, -0.004, 0.024),
+      new THREE.Vector3(0.028, -0.010, -0.048)
+    ]);
+    const fioPassado = new THREE.Mesh(
+      new THREE.TubeGeometry(curvaPassada, 16, CONFIG.raioFio * 0.65, 6, false),
+      fioMat
+    );
+    grupo.add(fioPassado);
+    return grupo;
+  }
+
+  // Alternativa A — Fio livre: extremidade delicada, fina e suspensa
+  const curvaPonta = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.0,    0.0,    0.0),
+    new THREE.Vector3(0.014,  0.004,  0.065),
+    new THREE.Vector3(-0.008, -0.003, 0.135),
+    new THREE.Vector3(0.010,  0.002,  0.195)
+  ]);
+
+  const pontaGeo = new THREE.TubeGeometry(curvaPonta, 16, CONFIG.raioFio * 0.72, 6, false);
+  const pos = pontaGeo.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const t = THREE.MathUtils.clamp(v.z / 0.195, 0, 1);
+    const centro = curvaPonta.getPoint(t);
+    const escala = 1 - t * 0.78;
+    v.x = centro.x + (v.x - centro.x) * escala;
+    v.y = centro.y + (v.y - centro.y) * escala;
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  pontaGeo.computeVertexNormals();
+
+  grupo.add(new THREE.Mesh(pontaGeo, fioMat));
+  return grupo;
 }
 
 /* =====================================================
@@ -567,12 +774,13 @@ function iniciarCena3D() {
   document.addEventListener('visibilitychange', () => {
     abaOculta = document.hidden;
     if (abaOculta) {
-      gerenciadorAudio.pararMovimento(true);
+      gerenciadorAudio.suspenderPorAbaOculta();
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
     } else {
+      gerenciadorAudio.retomarAposAbaVisivel();
       solicitarRender();
     }
   });
@@ -690,32 +898,42 @@ function iniciarCena3D() {
   rodapeFundo.position.set(0, 0.07, zFundo + 0.03);
   cena.add(rodapeFundo);
 
-  /* ── Fio Dourado Dinâmico Programático (22 Paradas) ── */
-  const yFio = CONFIG.raioFio + 0.002;
-  const pontosChaoFio = [
-    new THREE.Vector3(0.05,  yFio, zEntrada - 0.55),
-    new THREE.Vector3(-0.48, yFio, CONFIG.zInicialCavalete + 2.45)
+  /* ── Fio Dourado Suspenso no Espaço (22 Paradas) ── */
+  // Garante altura segura ligeiramente abaixo da base das molduras
+  const yBaseFio = Math.min(CONFIG.alturaFio, ALTURA_BASE_MOLDURA_REF - 0.06);
+  const ampY = CONFIG.amplitudeOndulacaoFio;
+
+  const pontosPercursoFio = [
+    new THREE.Vector3(0.05,  yBaseFio - ampY * 0.55, zEntrada - 0.55),
+    new THREE.Vector3(-0.48, yBaseFio + ampY * 0.45, CONFIG.zInicialCavalete + 2.45)
   ];
-  const alvosChaoParadas = [];
+  const alvosParadasFio = [];
 
   OBRAS.forEach((obra, i) => {
-    const pontoBase = new THREE.Vector3(obra.lado * 1.25, yFio, obra.posicao.z + 0.15);
-    pontosChaoFio.push(pontoBase);
-    alvosChaoParadas.push(pontoBase);
+    // Posicionado à frente e ligeiramente abaixo da moldura, sem atravessar o cavalete
+    const yParada = yBaseFio + Math.sin(i * 0.9) * (ampY * 0.3);
+    const pontoDianteObra = new THREE.Vector3(
+      obra.lado * 1.18,
+      yParada,
+      obra.posicao.z + CONFIG.recuoFrontalFio
+    );
+    pontosPercursoFio.push(pontoDianteObra);
+    alvosParadasFio.push(pontoDianteObra);
 
     if (i < OBRAS.length - 1) {
       const proxZ = OBRAS[i + 1].posicao.z;
+      const sinalOnda = i % 2 === 0 ? 1 : -1;
       const pontoMeio = new THREE.Vector3(
         -obra.lado * 0.08,
-        yFio,
+        yBaseFio + sinalOnda * ampY,
         (obra.posicao.z + proxZ) * 0.5 + 0.1
       );
-      pontosChaoFio.push(pontoMeio);
+      pontosPercursoFio.push(pontoMeio);
     }
   });
 
   const segmentosTubularesTotais = (OBRAS.length - 1) * CONFIG.segmentosPorTrechoFio;
-  const curvaFio = new THREE.CatmullRomCurve3(pontosChaoFio, false, 'catmullrom', 0.5);
+  const curvaFio = new THREE.CatmullRomCurve3(pontosPercursoFio, false, 'catmullrom', 0.5);
   const fioGeo = new THREE.TubeGeometry(
     curvaFio,
     segmentosTubularesTotais,
@@ -724,24 +942,23 @@ function iniciarCena3D() {
     false
   );
 
+  const envMapDourado = criarMapaReflexoDourado();
   const fioMat = new THREE.MeshStandardMaterial({
-    color: 0xF5C542,
-    metalness: 0.72,
-    roughness: 0.22,
-    envMap: criarMapaReflexoDourado(),
-    envMapIntensity: 1.4,
-    emissive: 0x9C6B12,
-    emissiveIntensity: 0.42
+    color: 0xE2B23A,
+    metalness: 0.65,
+    roughness: 0.30,
+    envMap: envMapDourado,
+    envMapIntensity: 1.15,
+    emissive: 0x6E4A0B,
+    emissiveIntensity: 0.20
   });
 
   const fioDourado = new THREE.Mesh(fioGeo, fioMat);
   cena.add(fioDourado);
 
-  const pontaFio = new THREE.Mesh(
-    new THREE.SphereGeometry(CONFIG.raioFio * 1.15, 12, 12),
-    fioMat
-  );
-  cena.add(pontaFio);
+  // Extremidade configurável: 'fio-livre' (Alternativa A) ou 'agulha' (Alternativa B)
+  const extremidadeFio = criarExtremidadeFio(CONFIG.estiloExtremidadeFio, fioMat, envMapDourado);
+  cena.add(extremidadeFio);
 
   const luzFio = new THREE.PointLight(
     ILUMINACAO.luzFioCor,
@@ -757,7 +974,7 @@ function iniciarCena3D() {
     tabelaPontosFio.push(curvaFio.getPointAt(i / amostrasFio));
   }
 
-  const tParadasFio = alvosChaoParadas.map((alvo) => {
+  const tParadasFio = alvosParadasFio.map((alvo) => {
     let melhorIdx = 0;
     let menorDist = Infinity;
     for (let i = 0; i <= amostrasFio; i++) {
@@ -779,16 +996,25 @@ function iniciarCena3D() {
     return THREE.MathUtils.lerp(tParadasFio[seg], tParadasFio[seg + 1], uCurva);
   }
 
+  const tempTangenteFio = new THREE.Vector3();
+  const tempOlharFio = new THREE.Vector3();
+
   function atualizarGeometriaFio(tVisivel, tPosicaoAtual) {
     const tLimitado = THREE.MathUtils.clamp(tVisivel, 0.002, 1);
     const segsVisiveis = Math.max(1, Math.round(tLimitado * segmentosTubularesTotais));
     const indicesPorSegmento = CONFIG.segmentosRadiaisFio * 6;
     fioGeo.setDrawRange(0, segsVisiveis * indicesPorSegmento);
 
-    pontaFio.position.copy(curvaFio.getPointAt(tLimitado));
+    // Mantém a extremidade (agulha ou fio livre) exatamente conectada e orientada na curva 3D
+    const pontoPonta = curvaFio.getPointAt(tLimitado);
+    curvaFio.getTangentAt(tLimitado, tempTangenteFio).normalize();
+    extremidadeFio.position.copy(pontoPonta);
+    tempOlharFio.copy(pontoPonta).add(tempTangenteFio);
+    extremidadeFio.lookAt(tempOlharFio);
 
+    // Luz acompanha a altura real do fio suspenso
     const pontoLuz = curvaFio.getPointAt(THREE.MathUtils.clamp(tPosicaoAtual, 0.002, 1));
-    luzFio.position.set(pontoLuz.x, 0.28, pontoLuz.z);
+    luzFio.position.set(pontoLuz.x, pontoLuz.y + 0.16, pontoLuz.z);
   }
 
   /* ── Geometrias e Materiais Compartilhados dos 22 Cavaletes ── */
@@ -1013,7 +1239,7 @@ function iniciarCena3D() {
     processarFilaCarregamento();
   }
 
-  /* ── Cálculo dos Pontos de Observação (compensando o HUD) ── */
+  /* ── Cálculo dos Pontos de Observação (preservado) ── */
   function recalcularPontosEPercursos() {
     if (topbar) {
       document.documentElement.style.setProperty('--topbar-h', `${topbar.getBoundingClientRect().height}px`);
@@ -1036,7 +1262,7 @@ function iniciarCena3D() {
         offsetLateral = meiaLarguraVisivel * fracaoOcupada * 0.92;
       }
     } else {
-      const topoLivre = hudInfo ? hudInfo.getBoundingClientRect().bottom : 112;
+      const topoLivre = hudInfo ? hudInfo.getBoundingClientRect().bottom : 124;
       const baseLivre = hudControles ? hudControles.getBoundingClientRect().top : window.innerHeight - 72;
       const centroLivreY = (topoLivre + baseLivre) * 0.5;
       const deslocamentoNormY = (centroLivreY / window.innerHeight) - 0.5;
@@ -1104,11 +1330,13 @@ function iniciarCena3D() {
     const tVisivelFio = mapearProgressoParaFio(estadoPercurso.progressoMaximoFio, true);
     atualizarGeometriaFio(tVisivelFio, tFioAtual);
 
+    // Mantém a câmera nos mesmos pontos de observação; durante o deslocamento,
+    // acompanha a altura real do fio suspenso em vez de apontar para o chão
     tempAlvo.lerpVectors(pontosObservacao[seg].alvo, pontosObservacao[seg + 1].alvo, u);
-    const pesoGuia = Math.sin(u * Math.PI) * 0.62;
+    const pesoGuia = Math.sin(u * Math.PI) * 0.58;
     if (pesoGuia > 0.001) {
       curvaFio.getPointAt(tFioAtual, tempGuiaFio);
-      tempGuiaFio.y = 0.28;
+      tempGuiaFio.y += 0.08;
       tempAlvo.lerp(tempGuiaFio, pesoGuia);
     }
     camera.lookAt(tempAlvo);
@@ -1169,7 +1397,6 @@ function iniciarCena3D() {
     iniciarDeslocamentoPara(0, true);
   }
 
-  // Inicializa diante de 0 — O Louco (sem reproduzir áudio)
   recalcularPontosEPercursos();
   iniciarDeslocamentoPara(0, true);
 
@@ -1283,6 +1510,9 @@ function iniciarCena3D() {
       ? Math.round(temposCarregamentoMs.reduce((a, b) => a + b, 0) / temposCarregamentoMs.length)
       : 0;
     return {
+      estiloExtremidadeFio: CONFIG.estiloExtremidadeFio,
+      alturaFioM: yBaseFio,
+      baseMolduraRefM: Number(ALTURA_BASE_MOLDURA_REF.toFixed(3)),
       obraAtual: `${OBRAS[indiceAtual].romano} — ${OBRAS[indiceAtual].nome} (${indiceAtual + 1}/${OBRAS.length})`,
       texturasEmMemoria: renderer.info.memory.textures,
       geometriasEmMemoria: renderer.info.memory.geometries,
@@ -1299,8 +1529,8 @@ function iniciarCena3D() {
     if (!painelDebug) return;
     const d = obterDiagnostico();
     painelDebug.textContent =
-      `Texturas VRAM: ${d.texturasEmMemoria} (slots: ${d.slotsCarregados}/22)\n` +
-      `Geometrias: ${d.geometriasEmMemoria} | Draw calls: ${d.drawCallsPorQuadro}\n` +
+      `Fio: ${d.estiloExtremidadeFio} (y=${d.alturaFioM.toFixed(2)}m | moldura=${d.baseMolduraRefM}m)\n` +
+      `VRAM: ${d.texturasEmMemoria} (slots: ${d.slotsCarregados}/22) | Geoms: ${d.geometriasEmMemoria} | Calls: ${d.drawCallsPorQuadro}\n` +
       `Renders: ${d.totalRendersExecutados} | Carga média: ${d.tempoMedioCargaMs} ms`;
   }
 
