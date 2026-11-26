@@ -627,6 +627,36 @@ function criarTexturaErroImagem(obra) {
   return tex;
 }
 
+function criarTexturaInscricaoCavalete(maxAnisotropy = 4) {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 128;
+  const ctx = c.getContext('2d');
+
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'italic 90px Georgia, "Iowan Old Style", "Palatino Linotype", serif';
+
+  const texto = 'O que permanece?';
+  const cx = c.width / 2;
+  const cy = c.height / 2 + 2;
+
+  // Sombra sutil superior/interna simulando gravação direta na madeira
+  ctx.fillStyle = 'rgba(35, 22, 12, 0.72)';
+  ctx.fillText(texto, cx, cy - 1.5);
+
+  // Dourado envelhecido em harmonia com o fio dourado
+  ctx.fillStyle = '#DFBC6A';
+  ctx.fillText(texto, cx, cy);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = Math.min(4, maxAnisotropy);
+  tex.needsUpdate = true;
+  return tex;
+}
+
 /* =====================================================
    CONSTRUÇÃO DA GALERIA 3D (22 ARCANOS)
    ===================================================== */
@@ -903,9 +933,13 @@ function iniciarCena3D() {
   const geoPernaFrontal = new THREE.BoxGeometry(0.055, 2.08, 0.055);
   const geoPernaTras    = new THREE.BoxGeometry(0.055, 2.15, 0.055);
   const geoHasteCentral = new THREE.BoxGeometry(0.05, 1.85, 0.045);
-  const geoPrateleira   = new THREE.BoxGeometry(0.98, 0.045, 0.14);
-  const geoCaixaUnit    = new THREE.BoxGeometry(1, 1, 1);
-  const geoPlanoUnit    = new THREE.PlaneGeometry(1, 1);
+
+  const ALTURA_PRATELEIRA = 0.102;
+  const PROF_PRATELEIRA   = 0.14;
+  const geoPrateleira     = new THREE.BoxGeometry(0.98, ALTURA_PRATELEIRA, PROF_PRATELEIRA);
+  const geoInscricao      = new THREE.PlaneGeometry(0.80, 0.10);
+  const geoCaixaUnit      = new THREE.BoxGeometry(1, 1, 1);
+  const geoPlanoUnit      = new THREE.PlaneGeometry(1, 1);
 
   const madeiraMat = new THREE.MeshStandardMaterial({
     color: 0x6E4E34,
@@ -922,6 +956,23 @@ function iniciarCena3D() {
   const placeholderFotoMat = new THREE.MeshBasicMaterial({
     color: 0xE8D9B8,
     toneMapped: false
+  });
+
+  // Textura e material compartilhados para a inscrição gravada na prateleira dos 22 cavaletes
+  const texturaInscricao = criarTexturaInscricaoCavalete(renderer.capabilities.getMaxAnisotropy());
+  const inscricaoMat = new THREE.MeshStandardMaterial({
+    map: texturaInscricao,
+    transparent: true,
+    depthWrite: false,
+    roughness: 0.48,
+    metalness: 0.45,
+    envMap: envMapDourado,
+    envMapIntensity: 0.65,
+    emissive: 0x3D2A09,
+    emissiveIntensity: 0.14,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1
   });
 
   /* ── Construção dos 22 Cavaletes ── */
@@ -951,7 +1002,12 @@ function iniciarCena3D() {
     grupo.add(hasteCentral);
 
     const prateleira = new THREE.Mesh(geoPrateleira, madeiraMat);
-    prateleira.position.set(0, 0.86, 0.09);
+    prateleira.position.set(0, 0.84, 0.09);
+
+    const inscricaoMesh = new THREE.Mesh(geoInscricao, inscricaoMat);
+    inscricaoMesh.position.set(0, 0, PROF_PRATELEIRA / 2 + 0.0012);
+    prateleira.add(inscricaoMesh);
+
     grupo.add(prateleira);
 
     const grupoQuadro = new THREE.Group();
@@ -982,7 +1038,7 @@ function iniciarCena3D() {
 
       const esp = largura * CONFIG.fatorEspessuraMoldura;
       const prof = CONFIG.profundidadeMoldura;
-      prateleira.position.y = CONFIG.alturaCentroObra - (altura / 2) - esp - 0.025;
+      prateleira.position.y = CONFIG.alturaCentroObra - (altura / 2) - esp - 0.0025 - (ALTURA_PRATELEIRA / 2);
 
       fundo.scale.set(largura + esp * 2, altura + esp * 2, 0.016);
       fundo.position.z = -prof / 2;
