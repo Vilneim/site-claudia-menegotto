@@ -125,6 +125,7 @@ const modalFoto      = document.getElementById('modal-foto');
 const modalNumero    = document.getElementById('modal-numero');
 const modalNome      = document.getElementById('modal-nome');
 const modalFrase     = document.getElementById('modal-frase');
+const modalReflexao  = document.getElementById('modal-reflexao');
 const modalPergunta  = document.getElementById('modal-pergunta');
 const modalFechar    = document.getElementById('modal-fechar');
 const modalFecharBtn = document.getElementById('modal-fechar-btn');
@@ -518,6 +519,7 @@ function abrirModal(indice) {
   modalNumero.textContent = `ARCANO ${obra.romano}`;
   modalNome.textContent = obra.nome;
   modalFrase.textContent = obra.frase;
+  modalReflexao.textContent = obra.reflexao;
   modalPergunta.textContent = obra.pergunta;
 
   if (!modal.open) {

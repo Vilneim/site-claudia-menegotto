@@ -11,20 +11,6 @@
   <link rel="icon" href="/img/favicon.png">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    /* Foco visível nos botões da galeria (o reset "all: unset" remove o contorno) */
-    .galeria button:focus-visible {
-      outline: 2px solid var(--gold);
-      outline-offset: 4px;
-    }
-    .galeria .g-nome {
-      color: var(--text-soft);
-    }
-    .galeria .g-num {
-      display: inline;
-      margin: 0 .35rem 0 0;
-      color: var(--gold);
-      letter-spacing: .08em;
-    }
     /* Abertura: mostra o bordado inteiro, sem cortar (proporção própria da foto) */
     .obra-hero-img {
       aspect-ratio: auto;
@@ -45,27 +31,172 @@
       .obra-hero-img { justify-self: start; }
     }
 
-    /* Miniaturas: seguem a proporção da foto, sem corte */
-    .galeria .g-foto:not(.sem-foto) {
-      aspect-ratio: auto;
-      display: block;
-      background: none;
-    }
-    .galeria .g-foto img {
+    /* ── Galeria tradicional: distribuição 7 + 8 + 7 centralizada no desktop ── */
+    .galeria {
+      display: grid;
+      grid-template-columns: repeat(16, minmax(0, 1fr));
+      gap: 1.75rem 1.15rem;
+      align-items: start;
       width: 100%;
-      height: auto;
-      object-fit: contain;
     }
 
-    /* Botões da janela ampliada */
-    .lb-nav .btn { padding: .65rem 1.1rem; font-size: .85rem; }
+    .galeria button {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      grid-column: span 2;
+      width: 100%;
+      min-width: 0;
+      transition: transform .25s var(--ease-out);
+    }
+
+    /* Linha 1 (7 obras: Arcanos 0 a VI) e Linha 3 (7 obras: Arcanos XV a XXI) centralizadas */
+    .galeria button:nth-child(1),
+    .galeria button:nth-child(16) {
+      grid-column: 2 / span 2;
+    }
+
+    /* Linha 2 (8 obras: Arcanos VII a XIV) ocupando toda a largura */
+    .galeria button:nth-child(8) {
+      grid-column: 1 / span 2;
+    }
+
+    .galeria button:hover {
+      transform: translateY(-3px);
+    }
+
+    .galeria button:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 4px;
+    }
+
+    /* Miniaturas com mesma largura/altura de apresentação, preservando proporção e moldura original */
+    .galeria .g-foto {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      overflow: hidden;
+      border-radius: 0;
+    }
+
+    .galeria .g-foto img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      transition: transform .4s var(--ease-out);
+    }
+
+    .galeria button:hover .g-foto img {
+      transform: scale(1.03);
+    }
+
+    .galeria .g-foto.sem-foto {
+      background: var(--gold-pale);
+      border-radius: var(--radius);
+    }
+
+    .galeria .g-nome {
+      display: block;
+      width: 100%;
+      margin-top: .55rem;
+      font: .82rem/1.4 var(--sans);
+      color: var(--text-soft);
+      text-align: center;
+      overflow-wrap: break-word;
+      text-wrap: balance;
+    }
+
+    .galeria .g-num {
+      display: inline;
+      margin: 0 .35rem 0 0;
+      color: var(--gold);
+      letter-spacing: .08em;
+      font-weight: 400;
+    }
+
+    /* Tablets amplos: 5 por linha */
+    @media (max-width: 1120px) {
+      .galeria {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 1.5rem 1rem;
+      }
+      .galeria button,
+      .galeria button:nth-child(1),
+      .galeria button:nth-child(8),
+      .galeria button:nth-child(16) {
+        grid-column: auto;
+      }
+    }
+
+    /* Tablets menores: 4 por linha */
+    @media (max-width: 860px) {
+      .galeria {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.35rem .9rem;
+      }
+    }
+
+    /* Celulares: 2 por linha */
+    @media (max-width: 580px) {
+      .galeria {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.25rem .85rem;
+      }
+    }
+
+    /* ── Janela ampliada (alinhada à identidade editorial da Sala Virtual) ── */
+    dialog#lb {
+      margin: auto;
+    }
+
+    .lb-info {
+      gap: 1.1rem;
+      overflow-wrap: break-word;
+    }
+
+    .lb-frase {
+      text-align: left;
+    }
+
+    .lb-reflexao {
+      font-family: var(--serif);
+      font-style: normal;
+      font-weight: 400;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: #3E3831;
+      text-align: left;
+    }
+
+    .lb-pergunta {
+      font: .94rem/1.6 var(--sans);
+      color: var(--gold);
+      border-left: 2px solid var(--gold-pale);
+      padding-left: .75rem;
+      text-align: left;
+    }
+
+    .lb-nav .btn {
+      padding: .65rem 1.1rem;
+      font-size: .85rem;
+    }
+
     .lb-fechar {
       position: sticky;
       top: .75rem;
       float: right;
       margin: .75rem .75rem 0 0;
       z-index: 5;
-      width: 2.5rem; height: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
       border-radius: 50%;
       border: 1px solid var(--gold-pale);
       background: var(--bg-card);
@@ -73,10 +204,24 @@
       font: 1.2rem/1 var(--sans);
       cursor: pointer;
     }
-    .lb-fechar:hover { background: var(--gold-pale); }
+
+    .lb-fechar:hover {
+      background: var(--gold-pale);
+    }
+
     .sem-foto-lb {
       color: var(--gold-pale);
       font: 6rem/1 var(--serif);
+    }
+
+    @media (max-width: 900px) {
+      .lb-info {
+        gap: 1rem;
+      }
+      .lb-reflexao {
+        font-size: 0.94rem;
+        line-height: 1.68;
+      }
     }
   </style>
 </head>
@@ -127,7 +272,7 @@
           Uma coleção de 22 obras. Diferentes olhares. Infinitas interpretações.
         </p>
         <div class="revelar delay-3" style="margin-top:2rem">
-          <a href="/obras/o-que-os-fios-revelam/sala-virtual/"" class="btn btn-primary">
+          <a href="/obras/o-que-os-fios-revelam/sala-virtual/" class="btn btn-primary">
             Entrar na galeria virtual <span class="btn-icon" aria-hidden="true">→</span>
           </a>
         </div>
@@ -146,7 +291,7 @@
     <!-- ── GALERIA ── -->
     <section class="galeria-section" id="galeria" aria-labelledby="galeria-titulo">
       <h2 class="galeria-titulo revelar" id="galeria-titulo">
-        Os 22 Arcanos — toque em um bordado para vê-lo por inteiro
+        Os 22 Arcanos — selecione uma obra para contemplá-la
       </h2>
       <div class="galeria" id="galeria-lista"></div>
     </section>
@@ -172,13 +317,14 @@
 
   <!-- ── JANELA AMPLIADA ── -->
   <dialog id="lb" aria-labelledby="lb-nome">
-    <button class="lb-fechar" id="lb-fechar" aria-label="Fechar">×</button>
+    <button class="lb-fechar" id="lb-fechar" type="button" aria-label="Fechar">×</button>
     <div class="lb">
       <div class="lb-foto" id="lb-foto"></div>
       <div class="lb-info">
         <p class="lb-numero" id="lb-numero"></p>
         <h3 class="lb-nome" id="lb-nome"></h3>
         <p class="lb-frase" id="lb-frase"></p>
+        <p class="lb-reflexao" id="lb-reflexao"></p>
         <p class="lb-pergunta" id="lb-pergunta"></p>
         <div class="lb-nav">
           <button class="btn btn-outline" id="lb-ant" type="button">← Anterior</button>
@@ -202,88 +348,20 @@
     </p>
   </footer>
 
-  <script>
-    /* =====================================================
-       Arcanos Maiores — nomenclatura do Tarô Rider-Waite-Smith
-       Arquivos em /img/arcanos/:  {arquivo}.webp  e  {arquivo}-mini.webp
-       Para trocar um texto, edite "frase" ou "pergunta" abaixo.
-       ===================================================== */
-    const ARCANOS = [
-      { n: 0,  romano: '0',     nome: 'O Louco',          arquivo: '00-o-louco',
-        frase: 'O primeiro passo, dado antes de saber aonde leva.',
-        pergunta: 'O que você deixaria para trás para começar?' },
-      { n: 1,  romano: 'I',     nome: 'O Mago',           arquivo: '01-o-mago',
-        frase: 'Tudo o que é preciso já está sobre a mesa.',
-        pergunta: 'Que talento seu está esperando ser usado?' },
-      { n: 2,  romano: 'II',    nome: 'A Sacerdotisa',     arquivo: '02-a-sacerdotisa',
-        frase: 'O saber que cresce no silêncio.',
-        pergunta: 'O que você já sabe, mas ainda não disse a si mesma?' },
-      { n: 3,  romano: 'III',   nome: 'A Imperatriz',     arquivo: '03-a-imperatriz',
-        frase: 'A criação que floresce quando é cuidada.',
-        pergunta: 'O que em você pede para nascer?' },
-      { n: 4,  romano: 'IV',    nome: 'O Imperador',      arquivo: '04-o-imperador',
-        frase: 'Estrutura, firmeza e a ordem que sustenta.',
-        pergunta: 'Onde falta um limite claro?' },
-      { n: 5,  romano: 'V',     nome: 'O Hierofante',     arquivo: '05-o-hierofante',
-        frase: 'A tradição como ponte entre o humano e o sagrado.',
-        pergunta: 'Que ensinamento você carrega de quem veio antes?' },
-      { n: 6,  romano: 'VI',    nome: 'Os Enamorados',    arquivo: '06-os-enamorados',
-        frase: 'Todo caminho começa em uma escolha.',
-        pergunta: 'O que o seu coração já escolheu?' },
-      { n: 7,  romano: 'VII',   nome: 'O Carro',          arquivo: '07-o-carro',
-        frase: 'Vontade e direção avançando juntas.',
-        pergunta: 'Para onde você está guiando a sua energia?' },
-      { n: 8,  romano: 'VIII',  nome: 'A Força',          arquivo: '08-a-forca',
-        frase: 'A coragem que é gentil e por isso permanece.',
-        pergunta: 'Onde a delicadeza pode mais do que a pressa?' },
-      { n: 9,  romano: 'IX',    nome: 'O Eremita',        arquivo: '09-o-eremita',
-        frase: 'A lanterna acesa no caminho interior.',
-        pergunta: 'Que resposta só aparece quando você silencia?' },
-      { n: 10, romano: 'X',     nome: 'A Roda da Fortuna', arquivo: '10-a-roda-da-fortuna',
-        frase: 'Os ciclos giram, e com eles tudo se renova.',
-        pergunta: 'O que está mudando e pede a sua aceitação?' },
-      { n: 11, romano: 'XI',    nome: 'A Justiça',        arquivo: '11-a-justica',
-        frase: 'O equilíbrio de quem olha os fatos com clareza.',
-        pergunta: 'O que precisa ser pesado com honestidade?' },
-      { n: 12, romano: 'XII',   nome: 'O Enforcado',      arquivo: '12-o-enforcado',
-        frase: 'Ver de cabeça para baixo é ver de outro jeito.',
-        pergunta: 'Que ponto de vista você ainda não experimentou?' },
-      { n: 13, romano: 'XIII',  nome: 'A Morte',          arquivo: '13-a-morte',
-        frase: 'O que termina abre espaço para o que vem.',
-        pergunta: 'O que já cumpriu o seu tempo?' },
-      { n: 14, romano: 'XIV',   nome: 'A Temperança',     arquivo: '14-a-temperanca',
-        frase: 'A paciência de misturar na medida certa.',
-        pergunta: 'Que elementos da sua vida pedem harmonia?' },
-      { n: 15, romano: 'XV',    nome: 'O Diabo',          arquivo: '15-o-diabo',
-        frase: 'As correntes que a gente não vê, mas carrega.',
-        pergunta: 'O que prende você e é possível soltar?' },
-      { n: 16, romano: 'XVI',   nome: 'A Torre',          arquivo: '16-a-torre',
-        frase: 'O que era falso cai para que a verdade apareça.',
-        pergunta: 'Que estrutura já não se sustenta?' },
-      { n: 17, romano: 'XVII',  nome: 'A Estrela',        arquivo: '17-a-estrela',
-        frase: 'A esperança depois da tempestade.',
-        pergunta: 'O que ainda brilha, mesmo de longe?' },
-      { n: 18, romano: 'XVIII', nome: 'A Lua',            arquivo: '18-a-lua',
-        frase: 'O território das sombras, dos sonhos e das dúvidas.',
-        pergunta: 'O que você sente, mas ainda não entende?' },
-      { n: 19, romano: 'XIX',   nome: 'O Sol',            arquivo: '19-o-sol',
-        frase: 'A clareza, a alegria e a vida à luz do dia.',
-        pergunta: 'O que merece ser celebrado agora?' },
-      { n: 20, romano: 'XX',    nome: 'O Julgamento',     arquivo: '20-o-julgamento',
-        frase: 'O chamado que desperta e convida a renascer.',
-        pergunta: 'Que chamado você tem ouvido ultimamente?' },
-      { n: 21, romano: 'XXI',   nome: 'O Mundo',          arquivo: '21-o-mundo',
-        frase: 'A volta completa: o fim que também é começo.',
-        pergunta: 'O que você já concluiu e merece reconhecer?' }
-    ];
+  <script type="module">
+    import { ARCANOS, urlMiniatura, urlGrande } from './sala-virtual/arcanos-data.js';
 
-    const BASE = '/img/arcanos/';
-    const lista = document.getElementById('galeria-lista');
-    const dlg   = document.getElementById('lb');
+    const lista  = document.getElementById('galeria-lista');
+    const dlg    = document.getElementById('lb');
     const lbFoto = document.getElementById('lb-foto');
+    const lbNum  = document.getElementById('lb-numero');
+    const lbNome = document.getElementById('lb-nome');
+    const lbFras = document.getElementById('lb-frase');
+    const lbRefl = document.getElementById('lb-reflexao');
+    const lbPerg = document.getElementById('lb-pergunta');
     let atual = 0;
 
-    /* ── Monta a galeria ── */
+    /* ── Monta a galeria a partir da fonte única de dados ── */
     ARCANOS.forEach((a, i) => {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -291,16 +369,13 @@
 
       const foto = document.createElement('div');
       foto.className = 'g-foto';
-      foto.style.cssText = 'aspect-ratio:auto;display:block;background:none';
 
       const img = document.createElement('img');
-      img.src = `${BASE}${a.arquivo}-mini.webp`;
+      img.src = urlMiniatura(a);
       img.alt = `Bordado do Arcano ${a.nome}`;
       img.loading = 'lazy';
-      img.style.cssText = 'width:100%;height:auto;object-fit:contain;display:block';
       img.addEventListener('error', () => {
         img.remove();
-        foto.style.cssText = '';
         foto.classList.add('sem-foto');
         foto.dataset.n = a.romano;
       });
@@ -308,7 +383,12 @@
 
       const legenda = document.createElement('span');
       legenda.className = 'g-nome';
-      legenda.innerHTML = `<b class="g-num" style="font-weight:400">${a.romano}</b>${a.nome}`;
+
+      const num = document.createElement('b');
+      num.className = 'g-num';
+      num.textContent = a.romano;
+
+      legenda.append(num, document.createTextNode(a.nome));
 
       btn.append(foto, legenda);
       btn.addEventListener('click', () => abrir(i));
@@ -322,7 +402,7 @@
 
       lbFoto.innerHTML = '';
       const img = document.createElement('img');
-      img.src = `${BASE}${a.arquivo}.webp`;
+      img.src = urlGrande(a);
       img.alt = `Bordado do Arcano ${a.nome}, ampliado`;
       img.addEventListener('error', () => {
         img.remove();
@@ -333,16 +413,18 @@
       });
       lbFoto.appendChild(img);
 
-      document.getElementById('lb-numero').textContent = `ARCANO ${a.romano}`;
-      document.getElementById('lb-nome').textContent = a.nome;
-      document.getElementById('lb-frase').textContent = a.frase;
-      document.getElementById('lb-pergunta').textContent = a.pergunta;
+      lbNum.textContent  = `ARCANO ${a.romano}`;
+      lbNome.textContent = a.nome;
+      lbFras.textContent = a.frase;
+      lbRefl.textContent = a.reflexao;
+      lbPerg.textContent = a.pergunta;
     }
 
     function abrir(i) {
       preencher(i);
       if (!dlg.open) dlg.showModal();
     }
+
     function ir(delta) {
       preencher((atual + delta + ARCANOS.length) % ARCANOS.length);
     }
@@ -355,6 +437,7 @@
     dlg.addEventListener('click', (e) => {
       if (e.target === dlg) dlg.close();
     });
+
     // Setas do teclado
     dlg.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft')  { e.preventDefault(); ir(-1); }
